@@ -4,7 +4,7 @@ This file provides guidance to Qoder (qoder.com) when working with code in this 
 
 ## 项目概述
 
-基于 Go Fiber 的 Web API 项目，使用 fx 进行依赖注入，支持从单体到微服务的渐进式演进。
+基于 Go Fiber 的 Web API 项目，使用 fx 进行依赖注入。
 
 ## 常用命令
 
@@ -99,7 +99,6 @@ internal/
     health/          # 示例：健康检查
   middleware/        # 中间件（Recovery、Logger）
   errno/             # 错误码定义和 Decode 工具
-  service/          # 业务逻辑层（未来扩展）
 
 pkg/                 # 公共包
   logger/           # 结构化日志

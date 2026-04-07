@@ -1,24 +1,6 @@
 # Go Fiber API
 
-基于 Go Fiber 的 Web API 项目，支持从单体模板到微服务架构的渐进式演进。
-
-## 项目定位
-
-**第一阶段：API Web Framework Template**
-
-提供开箱即用的 Web API 基础框架，包含：
-- HTTP 路由与中间件（Fiber）
-- 依赖注入（fx）
-- 结构化日志（zap + OpenTelemetry）
-- 健康检查端点
-
-**第二阶段：微服务集成**
-
-在第一阶段基础上扩展微服务能力：
-- 服务注册与发现
-- 分布式链路追踪
-- 负载均衡与熔断
-- 消息队列集成
+基于 Go Fiber 的 Web API 项目，提供开箱即用的 Web 基础框架。
 
 ## 项目结构
 
@@ -56,16 +38,6 @@ curl http://localhost:8080/api/health
 - **依赖注入**: [uber-go/fx](https://github.com/uber-go/fx) - 依赖注入框架
 - **日志**: [zap](https://github.com/uber-go/zap) + OpenTelemetry
 - **配置**: 支持 YAML/JSON 配置文件
-
-## 未来规划
-
-### 第二阶段待办
-
-- [ ] 集成 gRPC 服务
-- [ ] 添加服务注册中心（Consul/etcd）
-- [ ] 实现分布式链路追踪（Jaeger）
-- [ ] 添加消息队列支持（Kafka/RabbitMQ）
-- [ ] 实现熔断和重试机制
 
 ## 开发指南
 
