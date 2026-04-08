@@ -1,0 +1,30 @@
+package user
+
+import (
+	"context"
+
+	"go_sample_code/internal/errno"
+
+	"go.uber.org/zap"
+)
+
+// GetUserByEmail 根据邮箱获取用户
+func (s *userService) GetUserByEmail(ctx context.Context, email string) (*UserResponse, errno.Errno) {
+	ctx, end := s.withTrace(ctx, "UserService.GetUserByEmail")
+	defer end(nil)
+
+	if email == "" {
+		s.log.WarnCtx(ctx, "empty email")
+		return nil, errno.InvalidEmailError
+	}
+
+	s.log.DebugCtx(ctx, "getting user by email", zap.String("email", email))
+
+	u, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		s.log.WarnCtx(ctx, "user not found", zap.String("email", email))
+		return nil, errno.UserNotFoundError.WithData(email)
+	}
+
+	return toUserResponse(u), errno.OK
+}
