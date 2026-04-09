@@ -4,6 +4,8 @@ import (
 	"go_sample_code/internal/service/user"
 	"go_sample_code/pkg/logger"
 
+	"github.com/go-playground/validator/v10"
+
 	"github.com/gofiber/fiber/v2"
 	otel_trace "go.opentelemetry.io/otel/trace"
 )
@@ -31,13 +33,15 @@ type handler struct {
 	userService user.UserService
 	log         logger.Logger
 	tracer      otel_trace.Tracer
+	validate    *validator.Validate
 }
 
 // NewHandler 创建用户处理器实例
-func NewHandler(userService user.UserService, log logger.Logger, tracer otel_trace.Tracer) Handler {
+func NewHandler(userService user.UserService, log logger.Logger, tracer otel_trace.Tracer, validate *validator.Validate) Handler {
 	return &handler{
 		userService: userService,
 		log:         log,
 		tracer:      tracer,
+		validate:    validate,
 	}
 }

@@ -15,20 +15,8 @@ func (h *handler) Create(c *fiber.Ctx) error {
 	defer span.End()
 
 	var req CreateUserRequest
-	if err := c.BodyParser(&req); err != nil {
-		h.log.ErrorCtx(ctx, "failed to parse create user request", zap.Error(err))
-		return c.Status(errno.RequestParserError.GetHTTPStatus()).JSON(errno.Decode(nil, errno.RequestParserError))
-	}
-
-	// 验证必填字段
-	if req.Username == "" {
-		return c.Status(errno.RequestValidateError.GetHTTPStatus()).JSON(errno.Decode(nil, errno.RequestValidateError))
-	}
-	if req.Email == "" {
-		return c.Status(errno.RequestValidateError.GetHTTPStatus()).JSON(errno.Decode(nil, errno.RequestValidateError))
-	}
-	if req.Password == "" {
-		return c.Status(errno.RequestValidateError.GetHTTPStatus()).JSON(errno.Decode(nil, errno.RequestValidateError))
+	if h.parseAndValidateBody(c, &req) {
+		return nil
 	}
 
 	repoReq := &userrepo.CreateUserRequest{

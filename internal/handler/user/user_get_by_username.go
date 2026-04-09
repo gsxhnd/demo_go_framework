@@ -13,15 +13,14 @@ func (h *handler) GetByUsername(c *fiber.Ctx) error {
 	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.GetByUsername")
 	defer span.End()
 
-	username := c.Params("username")
-	if username == "" {
-		h.log.WarnCtx(ctx, "username is empty")
-		return c.Status(errno.InvalidUsernameError.GetHTTPStatus()).JSON(errno.Decode(nil, errno.InvalidUsernameError))
+	var params UsernameParams
+	if h.parseAndValidateParams(c, &params) {
+		return nil
 	}
 
-	result, errNo := h.userService.GetUserByUsername(ctx, username)
+	result, errNo := h.userService.GetUserByUsername(ctx, params.Username)
 	if errNo.GetCode() != errno.OK.Code {
-		h.log.ErrorCtx(ctx, "failed to get user by username", zap.String("username", username), zap.Int("code", errNo.GetCode()))
+		h.log.ErrorCtx(ctx, "failed to get user by username", zap.String("username", params.Username), zap.Int("code", errNo.GetCode()))
 		return c.Status(errNo.GetHTTPStatus()).JSON(errno.Decode(nil, errNo))
 	}
 

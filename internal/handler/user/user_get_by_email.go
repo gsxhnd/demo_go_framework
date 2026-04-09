@@ -13,15 +13,14 @@ func (h *handler) GetByEmail(c *fiber.Ctx) error {
 	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.GetByEmail")
 	defer span.End()
 
-	email := c.Params("email")
-	if email == "" {
-		h.log.WarnCtx(ctx, "email is empty")
-		return c.Status(errno.InvalidEmailError.GetHTTPStatus()).JSON(errno.Decode(nil, errno.InvalidEmailError))
+	var params EmailParams
+	if h.parseAndValidateParams(c, &params) {
+		return nil
 	}
 
-	result, errNo := h.userService.GetUserByEmail(ctx, email)
+	result, errNo := h.userService.GetUserByEmail(ctx, params.Email)
 	if errNo.GetCode() != errno.OK.Code {
-		h.log.ErrorCtx(ctx, "failed to get user by email", zap.String("email", email), zap.Int("code", errNo.GetCode()))
+		h.log.ErrorCtx(ctx, "failed to get user by email", zap.String("email", params.Email), zap.Int("code", errNo.GetCode()))
 		return c.Status(errNo.GetHTTPStatus()).JSON(errno.Decode(nil, errNo))
 	}
 

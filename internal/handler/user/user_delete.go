@@ -1,8 +1,6 @@
 package user
 
 import (
-	"strconv"
-
 	"go_sample_code/internal/errno"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,16 +13,14 @@ func (h *handler) Delete(c *fiber.Ctx) error {
 	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.Delete")
 	defer span.End()
 
-	idStr := c.Params("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		h.log.WarnCtx(ctx, "invalid user id", zap.String("id", idStr))
-		return c.Status(errno.InvalidUserIDError.GetHTTPStatus()).JSON(errno.Decode(nil, errno.InvalidUserIDError))
+	var params UserIDParams
+	if h.parseAndValidateParams(c, &params) {
+		return nil
 	}
 
-	errNo := h.userService.DeleteUser(ctx, id)
+	errNo := h.userService.DeleteUser(ctx, params.ID)
 	if errNo.GetCode() != errno.OK.Code {
-		h.log.ErrorCtx(ctx, "failed to delete user", zap.Int("id", id), zap.Int("code", errNo.GetCode()))
+		h.log.ErrorCtx(ctx, "failed to delete user", zap.Int("id", params.ID), zap.Int("code", errNo.GetCode()))
 		return c.Status(errNo.GetHTTPStatus()).JSON(errno.Decode(nil, errNo))
 	}
 
