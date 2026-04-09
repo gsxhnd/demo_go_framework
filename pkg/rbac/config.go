@@ -38,7 +38,7 @@ func DefaultConfig() *Config {
 			DefaultRole: "guest",
 		},
 		ABAC: ABACConfig{
-			Enabled:  true,
+			Enabled:   true,
 			ModelPath: "pkg/rbac/abac_model.conf",
 		},
 	}

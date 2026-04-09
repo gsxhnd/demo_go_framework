@@ -6,8 +6,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/casbin/casbin/v2"
 	"go_sample_code/pkg/logger"
+
+	"github.com/casbin/casbin/v2"
 
 	"go.uber.org/zap"
 )

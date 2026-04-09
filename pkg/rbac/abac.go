@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Knetic/govaluate"
 	"go_sample_code/pkg/logger"
+
+	"github.com/Knetic/govaluate"
 
 	"go.uber.org/zap"
 )
@@ -73,18 +74,18 @@ type ABACService interface {
 
 // abacService ABAC 服务实现
 type abacService struct {
-	config   *ABACConfig
-	log      logger.Logger
-	mu       sync.RWMutex
+	config *ABACConfig
+	log    logger.Logger
+	mu     sync.RWMutex
 	// 存储 ABAC 策略
 	policies []abacPolicy
 }
 
 // abacPolicy ABAC 策略
 type abacPolicy struct {
-	Expr     string
-	Obj      string
-	Act      string
+	Expr string
+	Obj  string
+	Act  string
 	// 预编译的表达式
 	compiled *govaluate.EvaluableExpression
 }
