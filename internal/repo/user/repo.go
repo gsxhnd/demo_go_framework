@@ -74,19 +74,3 @@ func NewUserRepo(client *ent.Client, l logger.Logger, tracer otel_trace.Tracer) 
 		tracer: tracer,
 	}
 }
-
-// withTrace 执行带追踪的操作
-func (r *userRepo) withTrace(ctx context.Context, spanName string) (context.Context, func(err error)) {
-	if r.tracer != nil {
-		ctx, span := r.tracer.Start(ctx, spanName)
-		return ctx, func(err error) {
-			if err != nil {
-				span.RecordError(err)
-				span.End()
-			} else {
-				span.End()
-			}
-		}
-	}
-	return ctx, func(err error) {}
-}

@@ -10,8 +10,14 @@ import (
 
 	"go_sample_code/internal/database"
 	healthhandler "go_sample_code/internal/handler/health"
+	userhandler "go_sample_code/internal/handler/user"
 	"go_sample_code/internal/middleware"
+	userrepo "go_sample_code/internal/repo/user"
+	userservice "go_sample_code/internal/service/user"
 	"go_sample_code/pkg/logger"
+	"go_sample_code/pkg/trace"
+
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
@@ -38,8 +44,13 @@ func main() {
 			newEntClients,
 			database.NewRedisClient,
 			newHealthCheckerWithConfig,
+			newTracerProvider,
+			trace.NewTracer,
 			NewFiberApp,
+			userrepo.NewUserRepo,
+			userservice.NewUserService,
 			healthhandler.NewHandler,
+			userhandler.NewHandler,
 		),
 		fx.Invoke(RegisterHooks),
 	).Run()
@@ -64,6 +75,17 @@ func newHealthCheckerWithConfig(
 		log,
 		cfg.GetHealthCheckTimeout(),
 	)
+}
+
+// newTracerProvider creates a tracer provider for distributed tracing
+func newTracerProvider() (*trace.TraceConfig, *sdktrace.TracerProvider) {
+	cfg := &trace.TraceConfig{
+		OtelEnable:         false, // 默认关闭，可通过配置启用
+		OtelServiceName:    "demo-go-framework",
+		OtelServiceVersion: "1.0.0",
+	}
+	tp, _ := trace.NewTracerProvider(cfg)
+	return cfg, tp
 }
 
 func NewConfig(cfgPath ConfigPath) (*database.DatabaseConfig, error) {

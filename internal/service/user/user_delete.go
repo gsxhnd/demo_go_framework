@@ -10,8 +10,8 @@ import (
 
 // DeleteUser 删除用户
 func (s *userService) DeleteUser(ctx context.Context, id int) errno.Errno {
-	ctx, end := s.withTrace(ctx, "UserService.DeleteUser")
-	defer end(nil)
+	ctx, span := s.tracer.Start(ctx, "UserService.DeleteUser")
+	defer span.End()
 
 	if id <= 0 {
 		s.log.WarnCtx(ctx, "invalid user id", zap.Int("id", id))

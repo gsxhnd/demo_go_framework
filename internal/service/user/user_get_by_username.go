@@ -10,8 +10,8 @@ import (
 
 // GetUserByUsername 根据用户名获取用户
 func (s *userService) GetUserByUsername(ctx context.Context, username string) (*UserResponse, errno.Errno) {
-	ctx, end := s.withTrace(ctx, "UserService.GetUserByUsername")
-	defer end(nil)
+	ctx, span := s.tracer.Start(ctx, "UserService.GetUserByUsername")
+	defer span.End()
 
 	if username == "" {
 		s.log.WarnCtx(ctx, "empty username")

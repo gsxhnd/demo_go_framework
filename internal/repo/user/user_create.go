@@ -10,8 +10,8 @@ import (
 
 // Create 创建用户
 func (r *userRepo) Create(ctx context.Context, req *CreateUserRequest) (*ent.User, error) {
-	ctx, end := r.withTrace(ctx, "UserRepo.Create")
-	defer end(nil)
+	ctx, span := r.tracer.Start(ctx, "UserRepo.Create")
+	defer span.End()
 
 	isActive := true
 	if req.IsActive != nil {

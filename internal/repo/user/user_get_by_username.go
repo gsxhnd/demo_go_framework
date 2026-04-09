@@ -11,8 +11,8 @@ import (
 
 // GetByUsername 根据用户名获取用户
 func (r *userRepo) GetByUsername(ctx context.Context, username string) (*ent.User, error) {
-	ctx, end := r.withTrace(ctx, "UserRepo.GetByUsername")
-	defer end(nil)
+	ctx, span := r.tracer.Start(ctx, "UserRepo.GetByUsername")
+	defer span.End()
 
 	u, err := r.client.User.Query().
 		Where(user.Username(username)).

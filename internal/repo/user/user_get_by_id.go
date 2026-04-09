@@ -10,8 +10,8 @@ import (
 
 // GetByID 根据 ID 获取用户
 func (r *userRepo) GetByID(ctx context.Context, id int) (*ent.User, error) {
-	ctx, end := r.withTrace(ctx, "UserRepo.GetByID")
-	defer end(nil)
+	ctx, span := r.tracer.Start(ctx, "UserRepo.GetByID")
+	defer span.End()
 
 	u, err := r.client.User.Get(ctx, id)
 	if err != nil {

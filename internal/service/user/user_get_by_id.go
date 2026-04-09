@@ -10,8 +10,8 @@ import (
 
 // GetUserByID 根据 ID 获取用户
 func (s *userService) GetUserByID(ctx context.Context, id int) (*UserResponse, errno.Errno) {
-	ctx, end := s.withTrace(ctx, "UserService.GetUserByID")
-	defer end(nil)
+	ctx, span := s.tracer.Start(ctx, "UserService.GetUserByID")
+	defer span.End()
 
 	if id <= 0 {
 		s.log.WarnCtx(ctx, "invalid user id", zap.Int("id", id))

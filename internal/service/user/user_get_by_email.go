@@ -10,8 +10,8 @@ import (
 
 // GetUserByEmail 根据邮箱获取用户
 func (s *userService) GetUserByEmail(ctx context.Context, email string) (*UserResponse, errno.Errno) {
-	ctx, end := s.withTrace(ctx, "UserService.GetUserByEmail")
-	defer end(nil)
+	ctx, span := s.tracer.Start(ctx, "UserService.GetUserByEmail")
+	defer span.End()
 
 	if email == "" {
 		s.log.WarnCtx(ctx, "empty email")

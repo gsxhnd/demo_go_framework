@@ -11,8 +11,8 @@ import (
 
 // List 分页获取用户列表
 func (r *userRepo) List(ctx context.Context, req *ListUsersRequest) ([]*ent.User, int, error) {
-	ctx, end := r.withTrace(ctx, "UserRepo.List")
-	defer end(nil)
+	ctx, span := r.tracer.Start(ctx, "UserRepo.List")
+	defer span.End()
 
 	page := req.Page
 	if page < 1 {

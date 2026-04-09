@@ -10,8 +10,8 @@ import (
 
 // ExistsByEmail 检查邮箱是否存在
 func (r *userRepo) ExistsByEmail(ctx context.Context, email string) (bool, error) {
-	ctx, end := r.withTrace(ctx, "UserRepo.ExistsByEmail")
-	defer end(nil)
+	ctx, span := r.tracer.Start(ctx, "UserRepo.ExistsByEmail")
+	defer span.End()
 
 	count, err := r.client.User.Query().
 		Where(user.Email(email)).

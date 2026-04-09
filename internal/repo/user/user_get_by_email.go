@@ -11,8 +11,8 @@ import (
 
 // GetByEmail 根据邮箱获取用户
 func (r *userRepo) GetByEmail(ctx context.Context, email string) (*ent.User, error) {
-	ctx, end := r.withTrace(ctx, "UserRepo.GetByEmail")
-	defer end(nil)
+	ctx, span := r.tracer.Start(ctx, "UserRepo.GetByEmail")
+	defer span.End()
 
 	u, err := r.client.User.Query().
 		Where(user.Email(email)).

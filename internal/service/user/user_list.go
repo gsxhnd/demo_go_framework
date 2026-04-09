@@ -11,8 +11,8 @@ import (
 
 // ListUsers 分页获取用户列表
 func (s *userService) ListUsers(ctx context.Context, req *userrepo.ListUsersRequest) (*ListUsersResponse, errno.Errno) {
-	ctx, end := s.withTrace(ctx, "UserService.ListUsers")
-	defer end(nil)
+	ctx, span := s.tracer.Start(ctx, "UserService.ListUsers")
+	defer span.End()
 
 	s.log.DebugCtx(ctx, "listing users",
 		zap.Int("page", req.Page),

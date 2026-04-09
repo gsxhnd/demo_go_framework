@@ -8,8 +8,8 @@ import (
 
 // Delete 删除用户
 func (r *userRepo) Delete(ctx context.Context, id int) error {
-	ctx, end := r.withTrace(ctx, "UserRepo.Delete")
-	defer end(nil)
+	ctx, span := r.tracer.Start(ctx, "UserRepo.Delete")
+	defer span.End()
 
 	err := r.client.User.DeleteOneID(id).Exec(ctx)
 	if err != nil {

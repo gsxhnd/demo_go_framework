@@ -10,8 +10,8 @@ import (
 
 // Update 更新用户
 func (r *userRepo) Update(ctx context.Context, id int, req *UpdateUserRequest) (*ent.User, error) {
-	ctx, end := r.withTrace(ctx, "UserRepo.Update")
-	defer end(nil)
+	ctx, span := r.tracer.Start(ctx, "UserRepo.Update")
+	defer span.End()
 
 	u, err := r.client.User.Get(ctx, id)
 	if err != nil {

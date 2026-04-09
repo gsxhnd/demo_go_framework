@@ -11,8 +11,8 @@ import (
 
 // UpdateUser 更新用户
 func (s *userService) UpdateUser(ctx context.Context, id int, req *userrepo.UpdateUserRequest) (*UserResponse, errno.Errno) {
-	ctx, end := s.withTrace(ctx, "UserService.UpdateUser")
-	defer end(nil)
+	ctx, span := s.tracer.Start(ctx, "UserService.UpdateUser")
+	defer span.End()
 
 	if id <= 0 {
 		s.log.WarnCtx(ctx, "invalid user id", zap.Int("id", id))

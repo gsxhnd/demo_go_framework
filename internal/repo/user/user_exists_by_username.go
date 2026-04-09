@@ -10,8 +10,8 @@ import (
 
 // ExistsByUsername 检查用户名是否存在
 func (r *userRepo) ExistsByUsername(ctx context.Context, username string) (bool, error) {
-	ctx, end := r.withTrace(ctx, "UserRepo.ExistsByUsername")
-	defer end(nil)
+	ctx, span := r.tracer.Start(ctx, "UserRepo.ExistsByUsername")
+	defer span.End()
 
 	count, err := r.client.User.Query().
 		Where(user.Username(username)).

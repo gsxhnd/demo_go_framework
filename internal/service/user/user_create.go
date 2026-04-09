@@ -11,8 +11,8 @@ import (
 
 // CreateUser 创建用户
 func (s *userService) CreateUser(ctx context.Context, req *userrepo.CreateUserRequest) (*UserResponse, errno.Errno) {
-	ctx, end := s.withTrace(ctx, "UserService.CreateUser")
-	defer end(nil)
+	ctx, span := s.tracer.Start(ctx, "UserService.CreateUser")
+	defer span.End()
 
 	s.log.InfoCtx(ctx, "creating user",
 		zap.String("username", req.Username),
