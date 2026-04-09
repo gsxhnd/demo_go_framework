@@ -5,6 +5,8 @@ go 1.25.0
 require (
 	entgo.io/ent v0.14.6
 	github.com/DeRuina/timberjack v1.4.1
+	github.com/Knetic/govaluate v3.0.0+incompatible
+	github.com/casbin/casbin/v2 v2.92.0
 	github.com/go-playground/validator/v10 v10.30.2
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/gofiber/fiber/v2 v2.52.12
@@ -31,6 +33,7 @@ require (
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
+	github.com/casbin/govaluate v1.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clipperhouse/stringish v0.1.1 // indirect

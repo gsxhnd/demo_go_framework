@@ -188,3 +188,31 @@ jwt:
   # 示例: "https://auth.example.com/.well-known/jwks.json"
   # 留空表示不启用 OAuth Token 验证
   oauth_jwk_url: ""
+
+# -----------------------------------------------------------------------------
+# RBAC/ABAC 权限配置
+# -----------------------------------------------------------------------------
+rbac:
+  # 是否启用 RBAC (基于角色的访问控制)
+  # 可选值: true, false
+  enabled: true
+
+  # RBAC 模型配置文件路径
+  # 包含权限定义、角色继承等规则
+  model_path: "pkg/rbac/model.conf"
+
+  # RBAC 策略文件路径
+  # 包含具体的权限分配规则
+  policy_path: "pkg/rbac/policy.csv"
+
+  # 默认角色 (当用户未分配角色时使用)
+  default_role: "guest"
+
+# ABAC 配置 (基于属性的访问控制)
+abac:
+  # 是否启用 ABAC
+  enabled: true
+
+  # ABAC 模型配置文件路径
+  # 包含基于属性的动态权限规则
+  model_path: "pkg/rbac/abac_model.conf"
