@@ -27,7 +27,7 @@ func (s *userService) CreateUser(ctx context.Context, req *userrepo.CreateUserRe
 	}
 	if exists {
 		s.log.WarnCtx(ctx, "username already exists", zap.String("username", req.Username))
-		return nil, errno.UserAlreadyExistsError.WithData("username")
+		return nil, errno.UserAlreadyExistsError
 	}
 
 	// 检查邮箱是否存在
@@ -38,7 +38,7 @@ func (s *userService) CreateUser(ctx context.Context, req *userrepo.CreateUserRe
 	}
 	if exists {
 		s.log.WarnCtx(ctx, "email already exists", zap.String("email", req.Email))
-		return nil, errno.UserAlreadyExistsError.WithData("email")
+		return nil, errno.UserAlreadyExistsError
 	}
 
 	// 创建用户

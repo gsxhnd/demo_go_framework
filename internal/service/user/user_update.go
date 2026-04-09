@@ -33,7 +33,7 @@ func (s *userService) UpdateUser(ctx context.Context, id int, req *userrepo.Upda
 			u, err := s.userRepo.GetByID(ctx, id)
 			if err == nil && u.Email != *req.Email {
 				s.log.WarnCtx(ctx, "email already in use", zap.String("email", *req.Email))
-				return nil, errno.UserAlreadyExistsError.WithData("email")
+				return nil, errno.UserAlreadyExistsError
 			}
 		}
 	}

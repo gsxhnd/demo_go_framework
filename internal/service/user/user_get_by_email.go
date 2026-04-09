@@ -23,7 +23,7 @@ func (s *userService) GetUserByEmail(ctx context.Context, email string) (*UserRe
 	u, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		s.log.WarnCtx(ctx, "user not found", zap.String("email", email))
-		return nil, errno.UserNotFoundError.WithData(email)
+		return nil, errno.UserNotFoundError
 	}
 
 	return toUserResponse(u), errno.OK

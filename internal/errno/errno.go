@@ -40,12 +40,6 @@ func (e errno) GetData() any {
 	return e.Data
 }
 
-func (e errno) WithData(data any) *errno {
-	next := e
-	next.Data = data
-	return &next
-}
-
 func decodeData(data any) Errno {
 	return &errno{
 		HTTPStatus: OK.HTTPStatus,
@@ -56,10 +50,6 @@ func decodeData(data any) Errno {
 }
 
 func decodeError(err error) Errno {
-	if err == nil {
-		return &OK
-	}
-
 	var ptr *errno
 	if errors.As(err, &ptr) && ptr != nil {
 		return ptr
@@ -70,7 +60,7 @@ func decodeError(err error) Errno {
 		return &val
 	}
 
-	return InternalServerError.WithData(err.Error())
+	return InternalServerError
 }
 
 // Decode decodes data and an error into an Errno struct.
