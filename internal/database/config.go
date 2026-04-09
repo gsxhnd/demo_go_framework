@@ -3,7 +3,6 @@ package database
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"time"
 )
 
@@ -67,6 +66,7 @@ type RedisConfig struct {
 	DialTimeout  time.Duration `yaml:"dial_timeout"`
 	ReadTimeout  time.Duration `yaml:"read_timeout"`
 	WriteTimeout time.Duration `yaml:"write_timeout"`
+	MaxRetries   int           `yaml:"max_retries"`
 }
 
 // DefaultRedisConfig returns the default Redis configuration
@@ -89,11 +89,49 @@ type RelationalConfig struct {
 
 // DatabaseConfig holds all database configuration
 type DatabaseConfig struct {
-	Relational RelationalConfig `yaml:"relational"`
-	Redis      RedisConfig      `yaml:"redis"`
+	Relational         RelationalConfig `yaml:"relational"`
+	Redis              RedisConfig      `yaml:"redis"`
+	HealthCheckTimeout time.Duration    `yaml:"health_check_timeout"`
 }
 
-// Validate checks if the database configuration is valid
+// DefaultHealthCheckTimeout returns the default health check timeout
+const DefaultHealthCheckTimeout = 5 * time.Second
+
+// ApplyDefaults applies default values to the configuration without modifying
+// the original struct passed in. Returns a new config with defaults applied.
+func (c *DatabaseConfig) ApplyDefaults() {
+	// Apply MySQL pool defaults
+	if c.Relational.Driver == DriverMySQL && c.Relational.MySQL.Pool.MaxOpenConns == 0 {
+		c.Relational.MySQL.Pool = DefaultPoolConfig()
+	}
+
+	// Apply PostgreSQL pool and SSL defaults
+	if c.Relational.Driver == DriverPostgres {
+		if c.Relational.Postgres.Pool.MaxOpenConns == 0 {
+			c.Relational.Postgres.Pool = DefaultPoolConfig()
+		}
+		if c.Relational.Postgres.SSLMode == "" {
+			c.Relational.Postgres.SSLMode = "disable"
+		}
+	}
+
+	// Apply Redis defaults
+	if c.Redis.PoolSize == 0 {
+		defaultCfg := DefaultRedisConfig()
+		c.Redis.PoolSize = defaultCfg.PoolSize
+		c.Redis.MinIdleConns = defaultCfg.MinIdleConns
+		c.Redis.DialTimeout = defaultCfg.DialTimeout
+		c.Redis.ReadTimeout = defaultCfg.ReadTimeout
+		c.Redis.WriteTimeout = defaultCfg.WriteTimeout
+	}
+
+	// Apply health check timeout default
+	if c.HealthCheckTimeout == 0 {
+		c.HealthCheckTimeout = DefaultHealthCheckTimeout
+	}
+}
+
+// Validate checks if the database configuration is valid without modifying it
 func (c *DatabaseConfig) Validate() error {
 	// Validate relational database driver
 	if !isValidDriver(c.Relational.Driver) {
@@ -121,6 +159,26 @@ func (c *DatabaseConfig) Validate() error {
 	return nil
 }
 
+// GetHealthCheckTimeout returns the configured health check timeout or default
+func (c *DatabaseConfig) GetHealthCheckTimeout() time.Duration {
+	if c.HealthCheckTimeout > 0 {
+		return c.HealthCheckTimeout
+	}
+	return DefaultHealthCheckTimeout
+}
+
+// getPoolConfig returns the connection pool configuration for the selected driver
+func (c *DatabaseConfig) getPoolConfig() PoolConfig {
+	switch c.Relational.Driver {
+	case DriverMySQL:
+		return c.Relational.MySQL.Pool
+	case DriverPostgres:
+		return c.Relational.Postgres.Pool
+	default:
+		return PoolConfig{}
+	}
+}
+
 // isValidDriver checks if the driver name is valid
 func isValidDriver(driver string) bool {
 	for _, d := range ValidDrivers {
@@ -131,7 +189,7 @@ func isValidDriver(driver string) bool {
 	return false
 }
 
-// validateMySQL validates MySQL-specific configuration
+// validateMySQL validates MySQL-specific configuration (pure validation, no side effects)
 func (c *DatabaseConfig) validateMySQL() error {
 	cfg := c.Relational.MySQL
 
@@ -151,15 +209,10 @@ func (c *DatabaseConfig) validateMySQL() error {
 		return errors.New("mysql dbname is required")
 	}
 
-	// Set default pool config if not provided
-	if c.Relational.MySQL.Pool.MaxOpenConns == 0 {
-		c.Relational.MySQL.Pool = DefaultPoolConfig()
-	}
-
 	return nil
 }
 
-// validatePostgres validates PostgreSQL-specific configuration
+// validatePostgres validates PostgreSQL-specific configuration (pure validation, no side effects)
 func (c *DatabaseConfig) validatePostgres() error {
 	cfg := c.Relational.Postgres
 
@@ -178,35 +231,14 @@ func (c *DatabaseConfig) validatePostgres() error {
 	if cfg.DBName == "" {
 		return errors.New("postgres dbname is required")
 	}
-	if cfg.SSLMode == "" {
-		cfg.SSLMode = "disable"
-		c.Relational.Postgres.SSLMode = cfg.SSLMode
-	}
-
-	// Set default pool config if not provided
-	if c.Relational.Postgres.Pool.MaxOpenConns == 0 {
-		c.Relational.Postgres.Pool = DefaultPoolConfig()
-	}
 
 	return nil
 }
 
-// validateRedis validates Redis-specific configuration
+// validateRedis validates Redis-specific configuration (pure validation, no side effects)
 func (c *DatabaseConfig) validateRedis() error {
-	cfg := c.Redis
-
-	if cfg.Addr == "" {
+	if c.Redis.Addr == "" {
 		return errors.New("redis addr is required")
-	}
-
-	// Set default Redis config if not provided
-	if cfg.PoolSize == 0 {
-		defaultCfg := DefaultRedisConfig()
-		c.Redis.PoolSize = defaultCfg.PoolSize
-		c.Redis.MinIdleConns = defaultCfg.MinIdleConns
-		c.Redis.DialTimeout = defaultCfg.DialTimeout
-		c.Redis.ReadTimeout = defaultCfg.ReadTimeout
-		c.Redis.WriteTimeout = defaultCfg.WriteTimeout
 	}
 
 	return nil
@@ -245,43 +277,6 @@ func (c *DatabaseConfig) BuildPostgresDSN() string {
 	)
 
 	return connStr
-}
-
-// BuildPostgresDSNWithURL builds a PostgreSQL DSN from a URL (for compatibility)
-func (c *DatabaseConfig) BuildPostgresDSNWithURL(postgresURL string) string {
-	if postgresURL == "" {
-		return c.BuildPostgresDSN()
-	}
-
-	u, err := url.Parse(postgresURL)
-	if err != nil {
-		return c.BuildPostgresDSN()
-	}
-
-	cfg := c.Relational.Postgres
-	if u.Host != "" {
-		cfg.Host = u.Host
-	}
-	if u.Port() != "" {
-		fmt.Sscanf(u.Port(), "%d", &cfg.Port)
-	}
-	if u.User != nil {
-		cfg.User = u.User.Username()
-		cfg.Password, _ = u.User.Password()
-	}
-	if len(u.Path) > 1 {
-		cfg.DBName = u.Path[1:]
-	}
-
-	q := u.Query()
-	if mode := q.Get("sslmode"); mode != "" {
-		cfg.SSLMode = mode
-	} else {
-		cfg.SSLMode = "disable"
-	}
-
-	c.Relational.Postgres = cfg
-	return c.BuildPostgresDSN()
 }
 
 // SelectedDriver returns the currently selected relational database driver

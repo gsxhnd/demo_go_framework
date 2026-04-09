@@ -4,19 +4,36 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"go_sample_code/internal/ent"
 	"go_sample_code/pkg/logger"
+
+	entsql "entgo.io/ent/dialect/sql"
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 )
 
+// configurePool applies the connection pool configuration to the sql.DB instance
+func configurePool(db *sql.DB, pool PoolConfig) {
+	if pool.MaxOpenConns > 0 {
+		db.SetMaxOpenConns(pool.MaxOpenConns)
+	}
+	if pool.MaxIdleConns > 0 {
+		db.SetMaxIdleConns(pool.MaxIdleConns)
+	}
+	if pool.ConnMaxLifetime > 0 {
+		db.SetConnMaxLifetime(pool.ConnMaxLifetime)
+	}
+	if pool.ConnMaxIdleTime > 0 {
+		db.SetConnMaxIdleTime(pool.ConnMaxIdleTime)
+	}
+}
+
 // NewEntClient creates a new ent client based on the configuration.
 // It supports MySQL and PostgreSQL drivers dynamically.
-func NewEntClient(cfg *DatabaseConfig, log logger.Logger) (*ent.Client, error) {
+func NewEntClient(cfg *DatabaseConfig, log logger.Logger) (*sql.DB, *ent.Client, error) {
 	driver := cfg.SelectedDriver()
 	dsn := cfg.buildRelationalDSN()
 
@@ -27,28 +44,37 @@ func NewEntClient(cfg *DatabaseConfig, log logger.Logger) (*ent.Client, error) {
 		zap.String("database", cfg.getRelationalDBName()),
 	)
 
-	client, err := ent.Open(driver, dsn)
+	// Open sql.DB directly to access connection pool configuration
+	db, err := sql.Open(driver, dsn)
 	if err != nil {
-		log.Error("failed to open relational database",
+		log.Error("failed to open database connection",
 			zap.String("driver", driver),
 			zap.String("host", cfg.getRelationalHost()),
 			zap.Error(err),
 		)
-		return nil, fmt.Errorf("failed to open relational database: %w", err)
+		return nil, nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
+	// Apply connection pool configuration
+	configurePool(db, cfg.getPoolConfig())
+
+	// Create ent client using the configured sql.DB
+	entDriver := entsql.OpenDB(driver, db)
+	client := ent.NewClient(ent.Driver(entDriver))
+
 	// Perform startup health check
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.GetHealthCheckTimeout())
 	defer cancel()
 
-	if err := PingRelational(ctx, client); err != nil {
+	if err := PingRelational(ctx, db); err != nil {
 		client.Close()
+		db.Close()
 		log.Error("failed to ping relational database during initialization",
 			zap.String("driver", driver),
 			zap.String("host", cfg.getRelationalHost()),
 			zap.Error(err),
 		)
-		return nil, fmt.Errorf("failed to ping relational database: %w", err)
+		return nil, nil, fmt.Errorf("failed to ping relational database: %w", err)
 	}
 
 	log.Info("relational database initialized successfully",
@@ -56,28 +82,38 @@ func NewEntClient(cfg *DatabaseConfig, log logger.Logger) (*ent.Client, error) {
 		zap.String("host", cfg.getRelationalHost()),
 	)
 
-	return client, nil
+	return db, client, nil
 }
 
 // PingRelational performs a health check on the relational database
-// by executing a simple query through ent
-func PingRelational(ctx context.Context, client *ent.Client) error {
-	// Use ent's User query to verify the database connection
-	// This will execute a SELECT query which tests the connection
+// using sql.DB.PingContext for a generic and reliable connection test
+func PingRelational(ctx context.Context, db *sql.DB) error {
+	if err := db.PingContext(ctx); err != nil {
+		return fmt.Errorf("failed to ping relational database: %w", err)
+	}
+	return nil
+}
+
+// PingRelationalWithEnt performs health check using ent client
+// (fallback when direct sql.DB is not available)
+func PingRelationalWithEnt(ctx context.Context, client *ent.Client) error {
 	_, err := client.User.Query().Limit(1).All(ctx)
 	if err != nil {
-		// If the error is "sql: no rows in result set", the connection is actually working
-		// We need to check if it's a connection error vs a "no rows" error
 		return fmt.Errorf("failed to query relational database: %w", err)
 	}
 	return nil
 }
 
-// CloseEntClient closes the ent client gracefully
-func CloseEntClient(client *ent.Client, log logger.Logger) {
+// CloseEntClient closes the ent client and underlying sql.DB
+func CloseEntClient(db *sql.DB, client *ent.Client, log logger.Logger) {
 	if client != nil {
 		if err := client.Close(); err != nil {
-			log.Error("failed to close relational database", zap.Error(err))
+			log.Error("failed to close ent client", zap.Error(err))
+		}
+	}
+	if db != nil {
+		if err := db.Close(); err != nil {
+			log.Error("failed to close database connection", zap.Error(err))
 		} else {
 			log.Info("relational database connection closed")
 		}
@@ -131,6 +167,3 @@ func (c *DatabaseConfig) getRelationalDBName() string {
 		return ""
 	}
 }
-
-// Ensure sql.DB interface is available
-var _ = (*sql.DB)(nil)

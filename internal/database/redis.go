@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go_sample_code/pkg/logger"
 
@@ -28,10 +27,11 @@ func NewRedisClient(cfg *DatabaseConfig, log logger.Logger) (*redis.Client, erro
 		DialTimeout:  cfg.Redis.DialTimeout,
 		ReadTimeout:  cfg.Redis.ReadTimeout,
 		WriteTimeout: cfg.Redis.WriteTimeout,
+		MaxRetries:   cfg.Redis.MaxRetries,
 	})
 
 	// Perform startup health check
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.GetHealthCheckTimeout())
 	defer cancel()
 
 	if err := PingRedis(ctx, client); err != nil {

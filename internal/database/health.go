@@ -2,9 +2,9 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
-	"go_sample_code/internal/ent"
 	"go_sample_code/pkg/logger"
 
 	"github.com/redis/go-redis/v9"
@@ -49,25 +49,31 @@ type HealthChecker interface {
 
 // healthChecker implements HealthChecker interface
 type healthChecker struct {
-	entClient   *ent.Client
-	redisClient *redis.Client
-	driver      string
-	log         logger.Logger
+	db                 *sql.DB
+	redisClient        *redis.Client
+	driver             string
+	log                logger.Logger
+	healthCheckTimeout time.Duration
 }
 
 // NewHealthChecker creates a new health checker that aggregates health status
 // of all database dependencies (relational DB and Redis)
 func NewHealthChecker(
-	entClient *ent.Client,
+	db *sql.DB,
 	redisClient *redis.Client,
 	driver string,
 	log logger.Logger,
+	healthCheckTimeout time.Duration,
 ) HealthChecker {
+	if healthCheckTimeout <= 0 {
+		healthCheckTimeout = DefaultHealthCheckTimeout
+	}
 	return &healthChecker{
-		entClient:   entClient,
-		redisClient: redisClient,
-		driver:      driver,
-		log:         log,
+		db:                 db,
+		redisClient:        redisClient,
+		driver:             driver,
+		log:                log,
+		healthCheckTimeout: healthCheckTimeout,
 	}
 }
 
@@ -86,8 +92,12 @@ func (h *healthChecker) Check(ctx context.Context) *HealthStatus {
 		},
 	}
 
-	// Check relational database health
-	if err := PingRelational(ctx, h.entClient); err != nil {
+	// Create a context with timeout for health checks
+	checkCtx, cancel := context.WithTimeout(ctx, h.healthCheckTimeout)
+	defer cancel()
+
+	// Check relational database health using sql.DB ping
+	if err := PingRelational(checkCtx, h.db); err != nil {
 		h.log.Warn("relational database health check failed",
 			zap.String("driver", h.driver),
 			zap.Error(err),
@@ -97,7 +107,7 @@ func (h *healthChecker) Check(ctx context.Context) *HealthStatus {
 	}
 
 	// Check Redis health
-	if err := PingRedis(ctx, h.redisClient); err != nil {
+	if err := PingRedis(checkCtx, h.redisClient); err != nil {
 		h.log.Warn("Redis health check failed",
 			zap.Error(err),
 		)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"os"
@@ -34,14 +35,35 @@ func main() {
 		fx.Provide(
 			NewLogger,
 			NewConfig,
-			database.NewEntClient,
+			newEntClients,
 			database.NewRedisClient,
-			database.NewHealthChecker,
+			newHealthCheckerWithConfig,
 			NewFiberApp,
 			healthhandler.NewHandler,
 		),
 		fx.Invoke(RegisterHooks),
 	).Run()
+}
+
+// newEntClients creates both the sql.DB and ent.Client
+func newEntClients(cfg *database.DatabaseConfig, log logger.Logger) (*sql.DB, *ent.Client, error) {
+	return database.NewEntClient(cfg, log)
+}
+
+// newHealthCheckerWithConfig creates a health checker with configuration parameters
+func newHealthCheckerWithConfig(
+	db *sql.DB,
+	redisClient *redis.Client,
+	log logger.Logger,
+	cfg *database.DatabaseConfig,
+) database.HealthChecker {
+	return database.NewHealthChecker(
+		db,
+		redisClient,
+		cfg.SelectedDriver(),
+		log,
+		cfg.GetHealthCheckTimeout(),
+	)
 }
 
 func NewConfig(cfgPath ConfigPath) (*database.DatabaseConfig, error) {
@@ -74,12 +96,14 @@ func NewConfig(cfgPath ConfigPath) (*database.DatabaseConfig, error) {
 			Redis: database.DefaultRedisConfig(),
 		}
 		cfg.Redis.Addr = "localhost:6379"
-		return &cfg, nil
+	} else {
+		if err := yaml.Unmarshal(data, &cfg); err != nil {
+			return nil, fmt.Errorf("failed to parse config file: %w", err)
+		}
 	}
 
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("failed to parse config file: %w", err)
-	}
+	// Apply default values to configuration
+	cfg.ApplyDefaults()
 
 	// Validate configuration
 	if err := cfg.Validate(); err != nil {
@@ -106,6 +130,7 @@ func RegisterHooks(
 	lifecycle fx.Lifecycle,
 	app *fiber.App,
 	log logger.Logger,
+	db *sql.DB,
 	entClient *ent.Client,
 	redisClient *redis.Client,
 	healthChecker database.HealthChecker,
@@ -133,8 +158,8 @@ func RegisterHooks(
 			// Close Redis client
 			database.CloseRedisClient(redisClient, log)
 
-			// Close ent client
-			database.CloseEntClient(entClient, log)
+			// Close ent client and sql.DB
+			database.CloseEntClient(db, entClient, log)
 
 			// Shutdown Fiber
 			if err := app.Shutdown(); err != nil {
