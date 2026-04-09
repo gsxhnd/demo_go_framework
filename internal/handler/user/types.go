@@ -44,8 +44,8 @@ type UserResponse struct {
 // ListUsersResponse 用户列表响应
 type ListUsersResponse struct {
 	Users     []*UserResponse `json:"users"`
-	Total     int              `json:"total"`
-	Page      int              `json:"page"`
-	PageSize  int              `json:"page_size"`
-	TotalPage int              `json:"total_page"`
+	Total     int             `json:"total"`
+	Page      int             `json:"page"`
+	PageSize  int             `json:"page_size"`
+	TotalPage int             `json:"total_page"`
 }
