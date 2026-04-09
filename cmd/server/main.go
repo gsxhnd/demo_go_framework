@@ -3,15 +3,22 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"os"
 	"time"
 
+	"go_sample_code/internal/database"
 	healthhandler "go_sample_code/internal/handler/health"
 	"go_sample_code/internal/middleware"
 	"go_sample_code/pkg/logger"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v3"
+
+	"go_sample_code/internal/ent"
 )
 
 var cfgPathFlag = flag.String("c", "config.yaml", "")
@@ -26,11 +33,60 @@ func main() {
 		fx.Supply(cfgPath),
 		fx.Provide(
 			NewLogger,
+			NewConfig,
+			database.NewEntClient,
+			database.NewRedisClient,
+			database.NewHealthChecker,
 			NewFiberApp,
 			healthhandler.NewHandler,
 		),
 		fx.Invoke(RegisterHooks),
 	).Run()
+}
+
+func NewConfig(cfgPath ConfigPath) (*database.DatabaseConfig, error) {
+	var cfg database.DatabaseConfig
+
+	data, err := os.ReadFile(string(cfgPath))
+	if err != nil {
+		// If config file doesn't exist, use defaults
+		cfg = database.DatabaseConfig{
+			Relational: database.RelationalConfig{
+				Driver: database.DriverPostgres,
+				Postgres: database.PostgresConfig{
+					Host:     "localhost",
+					Port:     5432,
+					User:     "postgres",
+					Password: "postgres",
+					DBName:   "demo",
+					SSLMode:  "disable",
+					Pool:     database.DefaultPoolConfig(),
+				},
+				MySQL: database.MySQLConfig{
+					Host:     "localhost",
+					Port:     3306,
+					User:     "root",
+					Password: "root",
+					DBName:   "demo",
+					Pool:     database.DefaultPoolConfig(),
+				},
+			},
+			Redis: database.DefaultRedisConfig(),
+		}
+		cfg.Redis.Addr = "localhost:6379"
+		return &cfg, nil
+	}
+
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("failed to parse config file: %w", err)
+	}
+
+	// Validate configuration
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid configuration: %w", err)
+	}
+
+	return &cfg, nil
 }
 
 func NewLogger(cfgPath ConfigPath) (logger.Logger, error) {
@@ -50,6 +106,9 @@ func RegisterHooks(
 	lifecycle fx.Lifecycle,
 	app *fiber.App,
 	log logger.Logger,
+	entClient *ent.Client,
+	redisClient *redis.Client,
+	healthChecker database.HealthChecker,
 	healthHandler healthhandler.Handler,
 ) {
 	lifecycle.Append(fx.Hook{
@@ -70,7 +129,19 @@ func RegisterHooks(
 		},
 		OnStop: func(ctx context.Context) error {
 			log.Info("shutting down server")
-			return app.Shutdown()
+
+			// Close Redis client
+			database.CloseRedisClient(redisClient, log)
+
+			// Close ent client
+			database.CloseEntClient(entClient, log)
+
+			// Shutdown Fiber
+			if err := app.Shutdown(); err != nil {
+				log.Error("failed to shutdown fiber app", zap.Error(err))
+			}
+
+			return nil
 		},
 	})
 }

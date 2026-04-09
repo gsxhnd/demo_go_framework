@@ -1,6 +1,7 @@
 package health
 
 import (
+	"go_sample_code/internal/database"
 	"go_sample_code/pkg/logger"
 
 	"github.com/gofiber/fiber/v2"
@@ -11,9 +12,13 @@ type Handler interface {
 }
 
 type handler struct {
-	log logger.Logger
+	log           logger.Logger
+	healthChecker database.HealthChecker
 }
 
-func NewHandler(log logger.Logger) Handler {
-	return &handler{log: log}
+func NewHandler(log logger.Logger, healthChecker database.HealthChecker) Handler {
+	return &handler{
+		log:           log,
+		healthChecker: healthChecker,
+	}
 }

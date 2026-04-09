@@ -7,6 +7,14 @@ import (
 )
 
 func (h *handler) Check(c *fiber.Ctx) error {
-	decoded := errno.Decode("ok", nil)
-	return c.Status(decoded.GetHTTPStatus()).JSON(decoded)
+	status := h.healthChecker.Check(c.Context())
+
+	// Determine HTTP status based on health status
+	httpStatus := fiber.StatusOK
+	if status.Data.Status != "ok" {
+		httpStatus = fiber.StatusServiceUnavailable
+	}
+
+	decoded := errno.Decode(status.Data, nil)
+	return c.Status(httpStatus).JSON(decoded)
 }
