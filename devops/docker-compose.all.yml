@@ -1,0 +1,15 @@
+# =============================================================================
+# Docker Compose 配置 - 一键启动完整开发环境
+# =============================================================================
+# 用途：启动所有服务（数据库 + 监控栈 + 应用）
+# 启动命令：docker-compose -f docker-compose.all.yml up -d
+# =============================================================================
+
+include:
+  - path: docker-compose.database.yml
+  - path: docker-compose.monitoring.yml
+  - path: docker-compose.app.yml
+
+networks:
+  default:
+    name: ${COMPOSE_PROJECT_NAME:-demo}-network

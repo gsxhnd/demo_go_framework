@@ -1,0 +1,19 @@
+# =============================================================================
+# Grafana Dashboard 配置文件
+# =============================================================================
+# 用途：自动加载预定义 Dashboard
+# =============================================================================
+
+apiVersion: 1
+
+providers:
+  - name: 'Demo Go Framework'
+    orgId: 1
+    folder: 'Demo Go Framework'
+    folderUid: 'demo-go-framework'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

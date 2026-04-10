@@ -176,6 +176,44 @@ trace:
   #   custom-header: "custom-value"
 
 # -----------------------------------------------------------------------------
+# Metrics 配置 (OpenTelemetry)
+# -----------------------------------------------------------------------------
+metrics:
+  # 是否启用 OpenTelemetry metrics 导出
+  otel_enable: false
+  # OTLP metrics 收集器端点
+  # 格式: "host:port"
+  # 示例: "otel-collector:4317"
+  otel_endpoint: ""
+  # 认证 Token
+  # 格式: 通常为 "Bearer <token>" 或直接为 token 字符串
+  otel_auth: ""
+  # 服务名称 (用于 metrics 标识)
+  # 应与 logger/trace.otel_service_name 保持一致
+  otel_service_name: "demo-go-framework"
+  # 服务版本
+  # 推荐使用语义化版本: "1.0.0"
+  otel_service_version: "1.0.0"
+  # 部署环境
+  # 推荐值: "development", "staging", "production"
+  otel_environment: "development"
+  # 组织名称 (某些 metrics 后端需要)
+  # 留空表示使用默认组织
+  otel_organization: ""
+  # 数据流名称 (某些 metrics 后端需要)
+  # 留空表示使用默认数据流
+  otel_stream_name: ""
+  # metrics 导出周期
+  # 格式: 数字 + 时间单位 (s=秒, m=分钟)
+  export_interval: "10s"
+  # 单次导出超时时间
+  export_timeout: "5s"
+  # 自定义 HTTP Headers
+  # 格式: Key-Value 对，用于传递给 OTLP 收集器
+  # otel_headers:
+  #   custom-header: "custom-value"
+
+# -----------------------------------------------------------------------------
 # JWT 配置
 # -----------------------------------------------------------------------------
 jwt:

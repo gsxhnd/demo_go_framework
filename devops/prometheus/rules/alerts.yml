@@ -1,0 +1,46 @@
+# =============================================================================
+# Prometheus 告警规则
+# =============================================================================
+
+groups:
+  - name: otel_collector
+    interval: 30s
+    rules:
+      - alert: OTelCollectorDown
+        expr: up{job="otel-collector"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "OpenTelemetry Collector is down"
+          description: "OTel Collector instance {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: OTelCollectorHighMemoryUsage
+        expr: (otelp_memory_limiter_usage_ratio > 0.8)
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "OTel Collector high memory usage"
+          description: "OTel Collector memory usage is above 80% for more than 5 minutes."
+
+  - name: demo_app
+    interval: 30s
+    rules:
+      - alert: DemoAppDown
+        expr: up{job="demo-go-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Demo Go App is down"
+          description: "Demo application instance {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: DemoAppHighErrorRate
+        expr: rate(http_server_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Demo App high error rate"
+          description: "Demo application error rate is above 10% for more than 5 minutes."

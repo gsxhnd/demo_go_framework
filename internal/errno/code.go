@@ -14,6 +14,7 @@ var (
 	TokenInvalidError      = errno{HTTPStatus: http.StatusUnauthorized, Code: 1101, Message: "Token Invalid Error", Data: nil}
 	TokenParserError       = errno{HTTPStatus: http.StatusUnauthorized, Code: 1102, Message: "Token Parser Error", Data: nil}
 	PermissionDeniedError  = errno{HTTPStatus: http.StatusForbidden, Code: 1103, Message: "Permission Denied", Data: nil}
+	RateLimitExceededError = errno{HTTPStatus: http.StatusTooManyRequests, Code: 1104, Message: "Rate Limit Exceeded", Data: nil}
 	RetrievingFileError    = errno{HTTPStatus: http.StatusNotFound, Code: 1201, Message: "Retrieving File Error", Data: nil}
 	// data error
 	DatabaseError           = errno{HTTPStatus: http.StatusInternalServerError, Code: 1301, Message: "Database Error", Data: nil}

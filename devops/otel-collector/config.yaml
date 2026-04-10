@@ -1,0 +1,109 @@
+# =============================================================================
+# OpenTelemetry Collector 配置文件
+# =============================================================================
+# 用途：接收应用发送的 OTLP 数据，统一处理后转发到后端存储
+# 架构：Go App -> OTel Collector -> Prometheus/Tempo/Loki -> Grafana
+# =============================================================================
+
+receivers:
+  # OTLP 接收器：支持 gRPC 和 HTTP 两种协议
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+        transport: grpc
+      http:
+        endpoint: 0.0.0.0:4318
+        transport: http
+
+processors:
+  # 批处理器：降低后端写入压力
+  batch:
+    send_batch_size: 1024
+    timeout: 1s
+    send_batch_max_size: 2048
+
+  # 内存限制器：防止 Collector 内存失控
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  # 属性过滤：移除敏感或高基数字段
+  # transform:
+  #   trace_statements:
+  #     - context: span
+  #       statements:
+  #         - replace_pattern(attributes["user.email"], "[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", "****")
+
+exporters:
+  # OTLP 导出器 - Tempo (traces)
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+    retry:
+      enabled: true
+      initial_interval: 1s
+      max_interval: 10s
+      max_elapsed_time: 60s
+
+  # Loki 导出器 (logs)
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    batch_size: 100
+    batch_wait: 1s
+    timeout: 10s
+    backoff:
+      enabled: true
+      initial_interval: 500ms
+      max_interval: 30s
+      max_elapsed_time: 120s
+
+  # Prometheus 导出器 (metrics)
+  # 将 metrics 暴露为 Prometheus scrape endpoint
+  prometheus:
+    endpoint: 0.0.0.0:9464
+    namespace: otel
+    resource_to_telemetry_conversion:
+      enabled: true
+    const_labels:
+      service: demo-go-framework
+      environment: ${APP_ENV:-development}
+
+  # 日志导出器 - 仅用于调试
+  logging:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+service:
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+      level: detailed
+    logs:
+      level: info
+
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/tempo, logging]
+
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus, logging]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [loki, logging]
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+    path: /health
+  # zpages:
+  #   endpoint: 0.0.0.0:55679

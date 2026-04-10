@@ -1,0 +1,277 @@
+# =============================================================================
+# Docker Compose 配置 - 完整开发环境
+# =============================================================================
+# 用途：本地开发环境，一键启动所有服务
+# 启动命令：docker-compose -f docker-compose.all.yml up -d
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # Database Services
+  # ===========================================================================
+
+  mysql:
+    image: mysql:8.0
+    container_name: ${COMPOSE_PROJECT_NAME:-demo}-mysql
+    restart: unless-stopped
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-demo_db}
+      MYSQL_USER: ${MYSQL_USER:-demo_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-demo_password}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./databases/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --max_connections=500
+      - --innodb_buffer_pool_size=256M
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-demo}-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-demo_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-demo_password}
+      POSTGRES_DB: ${POSTGRES_DB:-demo_db}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./databases/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=500"
+      - "-c"
+      - "shared_buffers=128MB"
+      - "-c"
+      - "effective_cache_size=256MB"
+      - "-c"
+      - "maintenance_work_mem=64MB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=16MB"
+      - "-c"
+      - "default_statistics_target=100"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "effective_io_concurrency=200"
+      - "-c"
+      - "work_mem=4MB"
+      - "-c"
+      - "min_wal_size=1GB"
+      - "-c"
+      - "max_wal_size=4GB"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-demo_user} -d ${POSTGRES_DB:-demo_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-demo}-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command:
+      - redis-server
+      - --maxmemory=256mb
+      - --maxmemory-policy=allkeys-lru
+      - --tcp-backlog=511
+      - --timeout=0
+      - --tcp-keepalive=300
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # Observability Services
+  # ===========================================================================
+
+  tempo:
+    image: grafana/tempo:2.4.1
+    container_name: ${COMPOSE_PROJECT_NAME:-demo}-tempo
+    restart: unless-stopped
+    ports:
+      - "${TEMPO_API_PORT:-3200}:3200"     # Tempo API
+      - "${TEMPO_OTLP_GRPC_PORT:-4317}:4317"  # OTLP gRPC
+      - "${TEMPO_OTLP_HTTP_PORT:-4318}:4318"  # OTLP HTTP
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo/config.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: ${COMPOSE_PROJECT_NAME:-demo}-loki
+    restart: unless-stopped
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    volumes:
+      - ./loki/config.yaml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    container_name: ${COMPOSE_PROJECT_NAME:-demo}-prometheus
+    restart: unless-stopped
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=15d'
+      - '--storage.tsdb.max-block-duration=2h'
+    volumes:
+      - ./prometheus/config.yaml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    networks:
+      - app-network
+    depends_on:
+      otel-collector:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.99.0
+    container_name: ${COMPOSE_PROJECT_NAME:-demo}-otel-collector
+    restart: unless-stopped
+    ports:
+      - "${OTEL_GRPC_PORT:-4317}:4317"    # OTLP gRPC
+      - "${OTEL_HTTP_PORT:-4318}:4318"    # OTLP HTTP
+      - "${OTEL_PROMETHEUS_PORT:-9464}:9464"  # Prometheus scrape
+      - "${OTEL_INTERNAL_METRICS_PORT:-8888}:8888"  # Collector metrics
+      - "${OTEL_HEALTH_PORT:-13133}:13133"  # Health check
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector/config.yaml:/etc/otel-collector-config.yaml:ro
+    networks:
+      - app-network
+    depends_on:
+      tempo:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:13133/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:10.3.3
+    container_name: ${COMPOSE_PROJECT_NAME:-demo}-grafana
+    restart: unless-stopped
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      # Security
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+      GF_SECURITY_COOKIE_SECURE: "false"
+      GF_SECURITY_COOKIE_SAMESITE: "lax"
+      # Anonymous access for development
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      # Paths
+      GF_PATHS_DATA: /var/lib/grafana
+      GF_PATHS_LOGS: /var/log/grafana
+      GF_PATHS_PLUGINS: /var/lib/grafana/plugins
+    volumes:
+      - ./grafana/config.ini:/etc/grafana/grafana.ini:ro
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana-data:/var/lib/grafana
+    networks:
+      - app-network
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      tempo:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  app-network:
+    driver: bridge
+    name: ${COMPOSE_PROJECT_NAME:-demo}-network
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  mysql-data:
+    name: ${COMPOSE_PROJECT_NAME:-demo}-mysql-data
+  postgres-data:
+    name: ${COMPOSE_PROJECT_NAME:-demo}-postgres-data
+  redis-data:
+    name: ${COMPOSE_PROJECT_NAME:-demo}-redis-data
+  tempo-data:
+    name: ${COMPOSE_PROJECT_NAME:-demo}-tempo-data
+  loki-data:
+    name: ${COMPOSE_PROJECT_NAME:-demo}-loki-data
+  prometheus-data:
+    name: ${COMPOSE_PROJECT_NAME:-demo}-prometheus-data
+  grafana-data:
+    name: ${COMPOSE_PROJECT_NAME:-demo}-grafana-data

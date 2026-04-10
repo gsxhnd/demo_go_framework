@@ -1,0 +1,83 @@
+# =============================================================================
+# Grafana 数据源配置文件
+# =============================================================================
+# 用途：自动配置 Grafana 数据源（Prometheus、Tempo、Loki）
+# =============================================================================
+
+apiVersion: 1
+
+datasources:
+  # --------------------------------------------------------------------------
+  # Prometheus 数据源 - Metrics 查询
+  # --------------------------------------------------------------------------
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      prometheusType: Prometheus
+      httpMethod: POST
+      cacheLevel: 'High'
+      rangeVectorDuration: 60s
+      httpMethodDetails:
+        codeMetricsLimit: 5000
+    version: 1
+
+  # --------------------------------------------------------------------------
+  # Grafana Tempo 数据源 - 分布式追踪
+  # --------------------------------------------------------------------------
+  - name: Tempo
+    type: tempo
+    uid: tempo
+    access: proxy
+    url: http://tempo:3200
+    editable: false
+    jsonData:
+      nodeGraph:
+        enabled: true
+      search:
+        hide: false
+      lokiSearch:
+        enabled: true
+      serviceMap:
+        datasourceUid: 'prometheus'
+      tempoQuery:
+        type: influx
+    version: 1
+
+  # --------------------------------------------------------------------------
+  # Loki 数据源 - 日志查询
+  # --------------------------------------------------------------------------
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      derivedFields:
+        - matcherRegex: '"trace_id":"([a-f0-9]+)"'
+          name: TraceID
+          datasourceUid: tempo
+          url: '$${__value.raw}'
+        - matcherRegex: '"span_id":"([a-f0-9]+)"'
+          name: SpanID
+          datasourceUid: tempo
+          url: '$${__value.raw}'
+        - matcherRegex: 'trace_id=([a-f0-9]+)'
+          name: TraceID
+          datasourceUid: tempo
+          url: '$${__value.raw}'
+      enableLogDetails: true
+      labelFieldsList:
+        - service_name
+        - deployment_environment
+        - level
+        - trace_id
+        - span_id
+        - method
+        - route
+    version: 1

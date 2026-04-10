@@ -5,18 +5,19 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"os"
 	"reflect"
 	"strings"
 	"time"
 
 	"go_sample_code/internal/database"
+	"go_sample_code/internal/ent"
 	healthhandler "go_sample_code/internal/handler/health"
 	userhandler "go_sample_code/internal/handler/user"
 	"go_sample_code/internal/middleware"
 	userrepo "go_sample_code/internal/repo/user"
 	userservice "go_sample_code/internal/service/user"
 	"go_sample_code/pkg/logger"
+	"go_sample_code/pkg/metrics"
 	"go_sample_code/pkg/trace"
 
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -26,9 +27,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v3"
-
-	"go_sample_code/internal/ent"
 )
 
 var cfgPathFlag = flag.String("c", "config.yaml", "")
@@ -42,13 +40,19 @@ func main() {
 		fx.StopTimeout(30*time.Second),
 		fx.Supply(cfgPath),
 		fx.Provide(
+			NewAppConfig,
+			NewDatabaseConfig,
+			NewLoggerConfig,
+			NewTraceConfig,
+			NewMetricsConfig,
 			NewLogger,
-			NewConfig,
 			newEntClients,
 			database.NewRedisClient,
 			newHealthCheckerWithConfig,
 			newTracerProvider,
 			trace.NewTracer,
+			newMeterProvider,
+			metrics.NewHTTPRecorder,
 			NewFiberApp,
 			NewValidator,
 			userrepo.NewUserRepo,
@@ -82,69 +86,25 @@ func newHealthCheckerWithConfig(
 }
 
 // newTracerProvider creates a tracer provider for distributed tracing
-func newTracerProvider() (*trace.TraceConfig, *sdktrace.TracerProvider) {
-	cfg := &trace.TraceConfig{
-		OtelEnable:         false, // 默认关闭，可通过配置启用
-		OtelServiceName:    "demo-go-framework",
-		OtelServiceVersion: "1.0.0",
-	}
-	tp, _ := trace.NewTracerProvider(cfg)
-	return cfg, tp
-}
-
-func NewConfig(cfgPath ConfigPath) (*database.DatabaseConfig, error) {
-	var cfg database.DatabaseConfig
-
-	data, err := os.ReadFile(string(cfgPath))
+func newTracerProvider(cfg *trace.TraceConfig) (*trace.TraceConfig, *sdktrace.TracerProvider, error) {
+	tp, err := trace.NewTracerProvider(cfg)
 	if err != nil {
-		// If config file doesn't exist, use defaults
-		cfg = database.DatabaseConfig{
-			Relational: database.RelationalConfig{
-				Driver: database.DriverPostgres,
-				Postgres: database.PostgresConfig{
-					Host:     "localhost",
-					Port:     5432,
-					User:     "postgres",
-					Password: "postgres",
-					DBName:   "demo",
-					SSLMode:  "disable",
-					Pool:     database.DefaultPoolConfig(),
-				},
-				MySQL: database.MySQLConfig{
-					Host:     "localhost",
-					Port:     3306,
-					User:     "root",
-					Password: "root",
-					DBName:   "demo",
-					Pool:     database.DefaultPoolConfig(),
-				},
-			},
-			Redis: database.DefaultRedisConfig(),
-		}
-		cfg.Redis.Addr = "localhost:6379"
-	} else {
-		if err := yaml.Unmarshal(data, &cfg); err != nil {
-			return nil, fmt.Errorf("failed to parse config file: %w", err)
-		}
+		return cfg, nil, fmt.Errorf("failed to create tracer provider: %w", err)
 	}
-
-	// Apply default values to configuration
-	cfg.ApplyDefaults()
-
-	// Validate configuration
-	if err := cfg.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid configuration: %w", err)
-	}
-
-	return &cfg, nil
+	return cfg, tp, nil
 }
 
-func NewLogger(cfgPath ConfigPath) (logger.Logger, error) {
-	cfg := logger.DefaultConfig()
+// newMeterProvider 创建 metrics provider
+func newMeterProvider(cfg *metrics.MetricsConfig) (*metrics.MeterProvider, error) {
+	return metrics.NewMeterProvider(cfg)
+}
+
+// NewLogger 创建日志实例
+func NewLogger(cfg *logger.LoggerConfig) (logger.Logger, error) {
 	return logger.NewLogger(cfg)
 }
 
-func NewFiberApp() *fiber.App {
+func NewFiberApp(cfg *AppConfig) *fiber.App {
 	return fiber.New(fiber.Config{
 		EnablePrintRoutes:     false,
 		DisableStartupMessage: true,
@@ -195,10 +155,16 @@ func RegisterHooks(
 	redisClient *redis.Client,
 	healthChecker database.HealthChecker,
 	healthHandler healthhandler.Handler,
+	httpMetrics *metrics.HTTPRecorder,
+	meterProvider *metrics.MeterProvider,
+	tracerProvider *sdktrace.TracerProvider,
 ) {
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
+			// Middleware 顺序: Recovery -> RateLimit -> Metrics -> Logger
 			app.Use(middleware.Recovery(log))
+			app.Use(middleware.RateLimit(middleware.DefaultRateLimitConfig(log)))
+			app.Use(middleware.Metrics(httpMetrics))
 			app.Use(middleware.Logger(log))
 
 			app.Get("/api/health", healthHandler.Check)
@@ -215,16 +181,35 @@ func RegisterHooks(
 		OnStop: func(ctx context.Context) error {
 			log.Info("shutting down server")
 
-			// Close Redis client
-			database.CloseRedisClient(redisClient, log)
-
-			// Close ent client and sql.DB
-			database.CloseEntClient(db, entClient, log)
-
-			// Shutdown Fiber
+			// 1. 先关闭 HTTP server
 			if err := app.Shutdown(); err != nil {
 				log.Error("failed to shutdown fiber app", zap.Error(err))
 			}
+
+			// 2. 关闭 Redis client
+			database.CloseRedisClient(redisClient, log)
+
+			// 3. 关闭 Ent/sql
+			database.CloseEntClient(db, entClient, log)
+
+			// 4. Shutdown meter provider (flush metrics)
+			if meterProvider != nil {
+				shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+				defer cancel()
+				if err := meterProvider.Shutdown(shutdownCtx); err != nil {
+					log.Error("failed to shutdown meter provider", zap.Error(err))
+				}
+			}
+
+			// 5. Shutdown tracer provider
+			if tracerProvider != nil {
+				if err := tracerProvider.Shutdown(ctx); err != nil {
+					log.Error("failed to shutdown tracer provider", zap.Error(err))
+				}
+			}
+
+			// 6. Shutdown logger
+			log.Shutdown(ctx)
 
 			return nil
 		},

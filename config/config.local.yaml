@@ -1,0 +1,95 @@
+# =============================================================================
+# 本地开发配置文件示例
+# =============================================================================
+# 用途：用于本地 Docker Compose 环境联调
+# 使用方法：
+#   1. 复制此文件到项目根目录并重命名为 config.yaml
+#   2. 确保 Docker Compose 环境已启动
+#   3. 启动应用服务
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 通用配置
+# -----------------------------------------------------------------------------
+common:
+  listen: ":8080"
+
+# -----------------------------------------------------------------------------
+# 数据库配置
+# -----------------------------------------------------------------------------
+database:
+  relational:
+    driver: "postgres"
+    postgres:
+      host: "localhost"
+      port: 5432
+      user: "postgres"
+      password: "postgres"
+      dbname: "demo"
+      sslmode: "disable"
+      pool:
+        max_open_conns: 25
+        max_idle_conns: 5
+        conn_max_lifetime: "5m"
+        conn_max_idle_time: "5m"
+
+  redis:
+    addr: "localhost:6379"
+    db: 0
+    pool_size: 10
+    min_idle_conns: 5
+
+# -----------------------------------------------------------------------------
+# 日志配置
+# -----------------------------------------------------------------------------
+logger:
+  output: "console"
+  level: "info"
+  otel_enable: true
+  otel_endpoint: "localhost:4317"
+  otel_service_name: "demo-go-framework"
+
+# -----------------------------------------------------------------------------
+# 追踪配置 (OpenTelemetry)
+# -----------------------------------------------------------------------------
+trace:
+  otel_enable: true
+  otel_endpoint: "localhost:4317"
+  otel_service_name: "demo-go-framework"
+  otel_service_version: "1.0.0"
+  otel_environment: "development"
+  otel_sampler_type: "always_on"
+
+# -----------------------------------------------------------------------------
+# Metrics 配置 (OpenTelemetry)
+# -----------------------------------------------------------------------------
+metrics:
+  otel_enable: true
+  otel_endpoint: "localhost:4317"
+  otel_service_name: "demo-go-framework"
+  otel_service_version: "1.0.0"
+  otel_environment: "development"
+  export_interval: "10s"
+  export_timeout: "5s"
+
+# -----------------------------------------------------------------------------
+# JWT 配置
+# -----------------------------------------------------------------------------
+jwt:
+  token_secret: "dev-secret-key-change-in-production"
+
+# -----------------------------------------------------------------------------
+# RBAC 配置
+# -----------------------------------------------------------------------------
+rbac:
+  enabled: true
+  model_path: "pkg/rbac/model.conf"
+  policy_path: "pkg/rbac/policy.csv"
+  default_role: "guest"
+
+# -----------------------------------------------------------------------------
+# ABAC 配置
+# -----------------------------------------------------------------------------
+abac:
+  enabled: true
+  model_path: "pkg/rbac/abac_model.conf"
