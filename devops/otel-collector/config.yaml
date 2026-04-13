@@ -11,10 +11,8 @@ receivers:
     protocols:
       grpc:
         endpoint: 0.0.0.0:4317
-        transport: grpc
       http:
         endpoint: 0.0.0.0:4318
-        transport: http
 
 processors:
   # 批处理器：降低后端写入压力
@@ -38,27 +36,10 @@ processors:
 
 exporters:
   # OTLP 导出器 - Tempo (traces)
-  otlp/tempo:
+  otlpgrpc/tempo:
     endpoint: tempo:4317
     tls:
       insecure: true
-    retry:
-      enabled: true
-      initial_interval: 1s
-      max_interval: 10s
-      max_elapsed_time: 60s
-
-  # Loki 导出器 (logs)
-  loki:
-    endpoint: http://loki:3100/loki/api/v1/push
-    batch_size: 100
-    batch_wait: 1s
-    timeout: 10s
-    backoff:
-      enabled: true
-      initial_interval: 500ms
-      max_interval: 30s
-      max_elapsed_time: 120s
 
   # Prometheus 导出器 (metrics)
   # 将 metrics 暴露为 Prometheus scrape endpoint
@@ -69,19 +50,15 @@ exporters:
       enabled: true
     const_labels:
       service: demo-go-framework
-      environment: ${APP_ENV:-development}
+      environment: development
 
-  # 日志导出器 - 仅用于调试
-  logging:
+  # 调试导出器
+  debug:
     verbosity: detailed
-    sampling_initial: 5
-    sampling_thereafter: 200
 
 service:
+  extensions: [health_check]
   telemetry:
-    metrics:
-      address: 0.0.0.0:8888
-      level: detailed
     logs:
       level: info
 
@@ -89,17 +66,17 @@ service:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [otlp/tempo, logging]
+      exporters: [otlpgrpc/tempo, debug]
 
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [prometheus, logging]
+      exporters: [prometheus, debug]
 
     logs:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [loki, logging]
+      exporters: [debug]
 
 extensions:
   health_check:

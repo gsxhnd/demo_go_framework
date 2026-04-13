@@ -1,5 +1,5 @@
 # =============================================================================
-# Tempo 配置文件
+# Tempo 配置文件 - 适配 Tempo 2.10.x (最小化配置)
 # =============================================================================
 # 用途：配置 Tempo 追踪存储
 # 文档：https://grafana.com/docs/tempo/latest/configuration/
@@ -27,7 +27,6 @@ ingester:
 compactor:
   compaction:
     block_retention: 24h
-    max-objects-per-block: 10000000
 
 storage:
   trace:
@@ -37,16 +36,8 @@ storage:
     local:
       path: /var/tempo/blocks
 
+# 全局限制
 overrides:
   defaults:
-    max_bytes_per_trace: 5000000
-    max_duration: 30m
-    max_spans_per_trace: 10000
-
-metrics_generator:
-  processor:
-    service_graphs:
-      enabled: true
-    span_metrics:
-      enabled: true
-      histogram_bucket boundaries: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
+    global:
+      max_bytes_per_trace: 5000000

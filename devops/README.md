@@ -8,11 +8,9 @@
 
 ```
 devops/
-├── docker-compose.yml           # 完整开发环境（数据库 + 监控栈）
 ├── docker-compose.database.yml  # 数据库服务（MySQL, PostgreSQL, Redis）
 ├── docker-compose.monitoring.yml # 监控栈（Prometheus, Grafana, Tempo, Loki, OTel）
-├── docker-compose.app.yml       # 应用服务
-├── docker-compose.all.yml       # 一键启动所有服务
+├── docker-compose.all.yml       # 一键启动 DevOps 服务（数据库 + 监控栈）
 ├── .env.example                 # 环境变量配置示例
 │
 ├── config/
@@ -65,42 +63,36 @@ vim .env
 ### 2. 一键启动所有服务
 
 ```bash
-# 启动所有服务（数据库 + 监控栈）
-docker-compose -f docker-compose.all.yml up -d
+# 启动所有 DevOps 服务（数据库 + 监控栈）
+docker compose -f docker-compose.all.yml up -d
 
 # 查看服务状态
-docker-compose -f docker-compose.all.yml ps
+docker compose -f docker-compose.all.yml ps
 
 # 查看日志
-docker-compose -f docker-compose.all.yml logs -f
+docker compose -f docker-compose.all.yml logs -f
 ```
 
 ### 3. 分步启动
 
 #### 启动数据库
 ```bash
-docker-compose -f docker-compose.database.yml up -d
+docker compose -f docker-compose.database.yml up -d
 ```
 
 #### 启动监控栈
 ```bash
-docker-compose -f docker-compose.monitoring.yml up -d
-```
-
-#### 启动应用
-```bash
-# 确保先启动数据库和监控栈
-docker-compose -f docker-compose.app.yml up -d
+docker compose -f docker-compose.monitoring.yml up -d
 ```
 
 ### 4. 停止服务
 
 ```bash
 # 停止所有服务
-docker-compose -f docker-compose.all.yml down
+docker compose -f docker-compose.all.yml down
 
 # 停止并删除数据卷
-docker-compose -f docker-compose.all.yml down -v
+docker compose -f docker-compose.all.yml down -v
 ```
 
 ## 服务端口
@@ -207,7 +199,7 @@ docker system prune -af --volumes
 ### Q: 服务启动失败怎么办？
 ```bash
 # 查看详细日志
-docker-compose -f docker-compose.all.yml logs [service-name]
+docker compose -f docker-compose.all.yml logs [service-name]
 
 # 检查端口占用
 netstat -tlnp | grep [port]
@@ -230,11 +222,11 @@ curl -X POST http://localhost:9090/-/reload
 ### Q: 如何重置 Grafana？
 ```bash
 # 停止服务
-docker-compose -f docker-compose.monitoring.yml down
+docker compose -f docker-compose.monitoring.yml down
 
 # 删除数据卷
 docker volume rm demo-grafana-data
 
 # 重新启动
-docker-compose -f docker-compose.monitoring.yml up -d
+docker compose -f docker-compose.monitoring.yml up -d
 ```
