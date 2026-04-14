@@ -106,7 +106,7 @@ func TestCreate_MissingUsername(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Post("/api/users", h.Create)
+	app.Post("/api/users", h.UserCreate)
 
 	// 缺少 username
 	body := `{"email":"test@example.com","password":"password123"}`
@@ -126,7 +126,7 @@ func TestCreate_InvalidEmail(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Post("/api/users", h.Create)
+	app.Post("/api/users", h.UserCreate)
 
 	// 无效的 email 格式
 	body := `{"username":"testuser","email":"invalid-email","password":"password123"}`
@@ -141,7 +141,7 @@ func TestCreate_PasswordTooShort(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Post("/api/users", h.Create)
+	app.Post("/api/users", h.UserCreate)
 
 	// password 太短
 	body := `{"username":"testuser","email":"test@example.com","password":"123"}`
@@ -156,7 +156,7 @@ func TestUpdate_InvalidID(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Put("/api/users/:id", h.Update)
+	app.Put("/api/users/:id", h.UserUpdate)
 
 	// 无效的 id（非数字）
 	body := `{"nickname":"newname"}`
@@ -171,7 +171,7 @@ func TestUpdate_IDLessThanOrEqualZero(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Put("/api/users/:id", h.Update)
+	app.Put("/api/users/:id", h.UserUpdate)
 
 	// id <= 0
 	body := `{"nickname":"newname"}`
@@ -186,7 +186,7 @@ func TestUpdate_EmptyBody(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Put("/api/users/:id", h.Update)
+	app.Put("/api/users/:id", h.UserUpdate)
 
 	// 空 body（没有传任何可更新字段）
 	body := `{}`
@@ -201,7 +201,7 @@ func TestUpdate_InvalidEmail(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Put("/api/users/:id", h.Update)
+	app.Put("/api/users/:id", h.UserUpdate)
 
 	// 无效的 email 格式
 	body := `{"email":"invalid-email"}`
@@ -216,7 +216,7 @@ func TestUpdate_PasswordTooShort(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Put("/api/users/:id", h.Update)
+	app.Put("/api/users/:id", h.UserUpdate)
 
 	// password 太短
 	body := `{"password":"123"}`
@@ -231,7 +231,7 @@ func TestGetByID_InvalidID(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Get("/api/users/:id", h.GetByID)
+	app.Get("/api/users/:id", h.UserGetByID)
 
 	// 无效的 id（非数字）
 	req := httptest.NewRequest("GET", "/api/users/abc", nil)
@@ -244,7 +244,7 @@ func TestGetByID_IDLessThanOrEqualZero(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Get("/api/users/:id", h.GetByID)
+	app.Get("/api/users/:id", h.UserGetByID)
 
 	// id <= 0
 	req := httptest.NewRequest("GET", "/api/users/0", nil)
@@ -257,7 +257,7 @@ func TestDelete_InvalidID(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Delete("/api/users/:id", h.Delete)
+	app.Delete("/api/users/:id", h.UserDelete)
 
 	// 无效的 id（非数字）
 	req := httptest.NewRequest("DELETE", "/api/users/abc", nil)
@@ -270,7 +270,7 @@ func TestDelete_IDLessThanOrEqualZero(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Delete("/api/users/:id", h.Delete)
+	app.Delete("/api/users/:id", h.UserDelete)
 
 	// id <= 0
 	req := httptest.NewRequest("DELETE", "/api/users/0", nil)
@@ -283,7 +283,7 @@ func TestGetByEmail_InvalidEmail(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Get("/api/users/email/:email", h.GetByEmail)
+	app.Get("/api/users/email/:email", h.UserGetByEmail)
 
 	// 无效的 email 格式
 	req := httptest.NewRequest("GET", "/api/users/email/invalid-email", nil)
@@ -296,7 +296,7 @@ func TestList_PageZero(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Get("/api/users", h.List)
+	app.Get("/api/users", h.UserList)
 
 	// page = 0 应该失败
 	req := httptest.NewRequest("GET", "/api/users?page=0", nil)
@@ -309,7 +309,7 @@ func TestList_PageSizeExceedsLimit(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Get("/api/users", h.List)
+	app.Get("/api/users", h.UserList)
 
 	// page_size = 101 应该失败
 	req := httptest.NewRequest("GET", "/api/users?page_size=101", nil)
@@ -322,7 +322,7 @@ func TestList_DefaultValues(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Get("/api/users", h.List)
+	app.Get("/api/users", h.UserList)
 
 	// 不传分页参数应该使用默认值
 	req := httptest.NewRequest("GET", "/api/users", nil)
@@ -336,7 +336,7 @@ func TestList_ValidParams(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Get("/api/users", h.List)
+	app.Get("/api/users", h.UserList)
 
 	// 有效参数
 	req := httptest.NewRequest("GET", "/api/users?page=1&page_size=10", nil)

@@ -8,10 +8,17 @@ import (
 	"go.uber.org/zap"
 )
 
-// List 分页获取用户列表
+// ListUsersRequest 分页查询请求
+type ListUsersRequest struct {
+	Page     int    `query:"page" validate:"min=1"`
+	PageSize int    `query:"page_size" validate:"min=1,max=100"`
+	Keyword  string `query:"keyword" validate:"max=128"`
+}
+
+// UserList 分页获取用户列表
 // GET /api/users?page=1&page_size=10&keyword=xxx
-func (h *handler) List(c *fiber.Ctx) error {
-	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.List")
+func (h *handler) UserList(c *fiber.Ctx) error {
+	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.UserList")
 	defer span.End()
 
 	var req ListUsersRequest

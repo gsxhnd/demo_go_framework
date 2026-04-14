@@ -7,10 +7,15 @@ import (
 	"go.uber.org/zap"
 )
 
-// GetByUsername 根据用户名获取用户
+// UsernameParams 路径参数：用户名
+type UsernameParams struct {
+	Username string `params:"username" validate:"required"`
+}
+
+// UserGetByUsername 根据用户名获取用户
 // GET /api/users/username/:username
-func (h *handler) GetByUsername(c *fiber.Ctx) error {
-	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.GetByUsername")
+func (h *handler) UserGetByUsername(c *fiber.Ctx) error {
+	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.UserGetByUsername")
 	defer span.End()
 
 	var params UsernameParams

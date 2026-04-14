@@ -8,10 +8,20 @@ import (
 	"go.uber.org/zap"
 )
 
-// Update 更新用户
+// UpdateUserRequest 更新用户请求
+type UpdateUserRequest struct {
+	Email    *string `json:"email,omitempty" validate:"omitempty,email"`
+	Password *string `json:"password,omitempty" validate:"omitempty,min=6"`
+	Nickname *string `json:"nickname,omitempty" validate:"omitempty,max=64"`
+	Avatar   *string `json:"avatar,omitempty" validate:"omitempty,url"`
+	Phone    *string `json:"phone,omitempty" validate:"omitempty,max=32"`
+	IsActive *bool   `json:"is_active,omitempty"`
+}
+
+// UserUpdate 更新用户
 // PUT /api/users/:id
-func (h *handler) Update(c *fiber.Ctx) error {
-	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.Update")
+func (h *handler) UserUpdate(c *fiber.Ctx) error {
+	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.UserUpdate")
 	defer span.End()
 
 	var idParams UserIDParams

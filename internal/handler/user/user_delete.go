@@ -7,10 +7,10 @@ import (
 	"go.uber.org/zap"
 )
 
-// Delete 删除用户
+// UserDelete 删除用户
 // DELETE /api/users/:id
-func (h *handler) Delete(c *fiber.Ctx) error {
-	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.Delete")
+func (h *handler) UserDelete(c *fiber.Ctx) error {
+	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.UserDelete")
 	defer span.End()
 
 	var params UserIDParams

@@ -7,10 +7,15 @@ import (
 	"go.uber.org/zap"
 )
 
-// GetByEmail 根据邮箱获取用户
+// EmailParams 路径参数：邮箱
+type EmailParams struct {
+	Email string `params:"email" validate:"required,email"`
+}
+
+// UserGetByEmail 根据邮箱获取用户
 // GET /api/users/email/:email
-func (h *handler) GetByEmail(c *fiber.Ctx) error {
-	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.GetByEmail")
+func (h *handler) UserGetByEmail(c *fiber.Ctx) error {
+	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.UserGetByEmail")
 	defer span.End()
 
 	var params EmailParams

@@ -12,20 +12,20 @@ import (
 
 // Handler 用户处理器接口
 type Handler interface {
-	// Create 创建用户
-	Create(c *fiber.Ctx) error
-	// GetByID 根据 ID 获取用户
-	GetByID(c *fiber.Ctx) error
-	// GetByUsername 根据用户名获取用户
-	GetByUsername(c *fiber.Ctx) error
-	// GetByEmail 根据邮箱获取用户
-	GetByEmail(c *fiber.Ctx) error
-	// Update 更新用户
-	Update(c *fiber.Ctx) error
-	// Delete 删除用户
-	Delete(c *fiber.Ctx) error
-	// List 分页获取用户列表
-	List(c *fiber.Ctx) error
+	// UserCreate 创建用户
+	UserCreate(c *fiber.Ctx) error
+	// UserGetByID 根据 ID 获取用户
+	UserGetByID(c *fiber.Ctx) error
+	// UserGetByUsername 根据用户名获取用户
+	UserGetByUsername(c *fiber.Ctx) error
+	// UserGetByEmail 根据邮箱获取用户
+	UserGetByEmail(c *fiber.Ctx) error
+	// UserUpdate 更新用户
+	UserUpdate(c *fiber.Ctx) error
+	// UserDelete 删除用户
+	UserDelete(c *fiber.Ctx) error
+	// UserList 分页获取用户列表
+	UserList(c *fiber.Ctx) error
 }
 
 // handler 用户处理器实现

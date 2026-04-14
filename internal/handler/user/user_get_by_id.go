@@ -7,10 +7,10 @@ import (
 	"go.uber.org/zap"
 )
 
-// GetByID 根据 ID 获取用户
+// UserGetByID 根据 ID 获取用户
 // GET /api/users/:id
-func (h *handler) GetByID(c *fiber.Ctx) error {
-	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.GetByID")
+func (h *handler) UserGetByID(c *fiber.Ctx) error {
+	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.UserGetByID")
 	defer span.End()
 
 	var params UserIDParams
