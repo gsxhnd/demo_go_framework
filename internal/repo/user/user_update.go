@@ -8,9 +8,19 @@ import (
 	"go.uber.org/zap"
 )
 
-// Update 更新用户
-func (r *userRepo) Update(ctx context.Context, id int, req *UpdateUserRequest) (*ent.User, error) {
-	ctx, span := r.tracer.Start(ctx, "UserRepo.Update")
+// UpdateUserRequest 更新用户请求
+type UpdateUserRequest struct {
+	Email    *string `json:"email,omitempty" validate:"omitempty,email"`
+	Password *string `json:"password,omitempty" validate:"omitempty,min=6"`
+	Nickname *string `json:"nickname,omitempty" validate:"omitempty,max=100"`
+	Avatar   *string `json:"avatar,omitempty" validate:"omitempty,max=500"`
+	Phone    *string `json:"phone,omitempty" validate:"omitempty,max=20"`
+	IsActive *bool   `json:"is_active,omitempty"`
+}
+
+// UserUpdate 更新用户
+func (r *userRepo) UserUpdate(ctx context.Context, id int, req *UpdateUserRequest) (*ent.User, error) {
+	ctx, span := r.tracer.Start(ctx, "UserRepo.UserUpdate")
 	defer span.End()
 
 	u, err := r.client.User.Get(ctx, id)

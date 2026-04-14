@@ -8,9 +8,20 @@ import (
 	"go.uber.org/zap"
 )
 
-// Create 创建用户
-func (r *userRepo) Create(ctx context.Context, req *CreateUserRequest) (*ent.User, error) {
-	ctx, span := r.tracer.Start(ctx, "UserRepo.Create")
+// CreateUserRequest 创建用户请求
+type CreateUserRequest struct {
+	Username string `json:"username" validate:"required,min=3,max=50"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=6"`
+	Nickname string `json:"nickname,omitempty" validate:"omitempty,max=100"`
+	Avatar   string `json:"avatar,omitempty" validate:"omitempty,max=500"`
+	Phone    string `json:"phone,omitempty" validate:"omitempty,max=20"`
+	IsActive *bool  `json:"is_active,omitempty"`
+}
+
+// UserCreate 创建用户
+func (r *userRepo) UserCreate(ctx context.Context, req *CreateUserRequest) (*ent.User, error) {
+	ctx, span := r.tracer.Start(ctx, "UserRepo.UserCreate")
 	defer span.End()
 
 	isActive := true

@@ -8,9 +8,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// ExistsByUsername 检查用户名是否存在
-func (r *userRepo) ExistsByUsername(ctx context.Context, username string) (bool, error) {
-	ctx, span := r.tracer.Start(ctx, "UserRepo.ExistsByUsername")
+// UserExistsByUsername 检查用户名是否存在
+func (r *userRepo) UserExistsByUsername(ctx context.Context, username string) (bool, error) {
+	ctx, span := r.tracer.Start(ctx, "UserRepo.UserExistsByUsername")
 	defer span.End()
 
 	count, err := r.client.User.Query().

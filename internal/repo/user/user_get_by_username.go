@@ -9,9 +9,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// GetByUsername 根据用户名获取用户
-func (r *userRepo) GetByUsername(ctx context.Context, username string) (*ent.User, error) {
-	ctx, span := r.tracer.Start(ctx, "UserRepo.GetByUsername")
+// UserGetByUsername 根据用户名获取用户
+func (r *userRepo) UserGetByUsername(ctx context.Context, username string) (*ent.User, error) {
+	ctx, span := r.tracer.Start(ctx, "UserRepo.UserGetByUsername")
 	defer span.End()
 
 	u, err := r.client.User.Query().

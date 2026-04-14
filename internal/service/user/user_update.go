@@ -23,14 +23,14 @@ func (s *userService) UpdateUser(ctx context.Context, id int, req *userrepo.Upda
 
 	// 如果更新邮箱，检查邮箱是否已被使用
 	if req.Email != nil {
-		exists, err := s.userRepo.ExistsByEmail(ctx, *req.Email)
+		exists, err := s.userRepo.UserExistsByEmail(ctx, *req.Email)
 		if err != nil {
 			s.log.ErrorCtx(ctx, "failed to check email exists", zap.Error(err))
 			return nil, errno.DatabaseError
 		}
 		if exists {
 			// 检查是否是自己的邮箱
-			u, err := s.userRepo.GetByID(ctx, id)
+			u, err := s.userRepo.UserGetByID(ctx, id)
 			if err == nil && u.Email != *req.Email {
 				s.log.WarnCtx(ctx, "email already in use", zap.String("email", *req.Email))
 				return nil, errno.UserAlreadyExistsError
@@ -38,7 +38,7 @@ func (s *userService) UpdateUser(ctx context.Context, id int, req *userrepo.Upda
 		}
 	}
 
-	u, err := s.userRepo.Update(ctx, id, req)
+	u, err := s.userRepo.UserUpdate(ctx, id, req)
 	if err != nil {
 		s.log.ErrorCtx(ctx, "failed to update user", zap.Error(err))
 		return nil, errno.UserUpdateFailedError

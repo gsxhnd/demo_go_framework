@@ -20,7 +20,7 @@ func (s *userService) CreateUser(ctx context.Context, req *userrepo.CreateUserRe
 	)
 
 	// 检查用户名是否存在
-	exists, err := s.userRepo.ExistsByUsername(ctx, req.Username)
+	exists, err := s.userRepo.UserExistsByUsername(ctx, req.Username)
 	if err != nil {
 		s.log.ErrorCtx(ctx, "failed to check username exists", zap.Error(err))
 		return nil, errno.DatabaseError
@@ -31,7 +31,7 @@ func (s *userService) CreateUser(ctx context.Context, req *userrepo.CreateUserRe
 	}
 
 	// 检查邮箱是否存在
-	exists, err = s.userRepo.ExistsByEmail(ctx, req.Email)
+	exists, err = s.userRepo.UserExistsByEmail(ctx, req.Email)
 	if err != nil {
 		s.log.ErrorCtx(ctx, "failed to check email exists", zap.Error(err))
 		return nil, errno.DatabaseError
@@ -42,7 +42,7 @@ func (s *userService) CreateUser(ctx context.Context, req *userrepo.CreateUserRe
 	}
 
 	// 创建用户
-	u, err := s.userRepo.Create(ctx, req)
+	u, err := s.userRepo.UserCreate(ctx, req)
 	if err != nil {
 		s.log.ErrorCtx(ctx, "failed to create user", zap.Error(err))
 		return nil, errno.UserCreateFailedError

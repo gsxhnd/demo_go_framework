@@ -19,7 +19,7 @@ func (s *userService) ListUsers(ctx context.Context, req *userrepo.ListUsersRequ
 		zap.Int("page_size", req.PageSize),
 	)
 
-	users, total, err := s.userRepo.List(ctx, req)
+	users, total, err := s.userRepo.UserList(ctx, req)
 	if err != nil {
 		s.log.ErrorCtx(ctx, "failed to list users", zap.Error(err))
 		return nil, errno.DatabaseError

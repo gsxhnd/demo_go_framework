@@ -8,9 +8,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// ExistsByEmail 检查邮箱是否存在
-func (r *userRepo) ExistsByEmail(ctx context.Context, email string) (bool, error) {
-	ctx, span := r.tracer.Start(ctx, "UserRepo.ExistsByEmail")
+// UserExistsByEmail 检查邮箱是否存在
+func (r *userRepo) UserExistsByEmail(ctx context.Context, email string) (bool, error) {
+	ctx, span := r.tracer.Start(ctx, "UserRepo.UserExistsByEmail")
 	defer span.End()
 
 	count, err := r.client.User.Query().

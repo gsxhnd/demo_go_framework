@@ -8,9 +8,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// GetByID 根据 ID 获取用户
-func (r *userRepo) GetByID(ctx context.Context, id int) (*ent.User, error) {
-	ctx, span := r.tracer.Start(ctx, "UserRepo.GetByID")
+// UserGetByID 根据 ID 获取用户
+func (r *userRepo) UserGetByID(ctx context.Context, id int) (*ent.User, error) {
+	ctx, span := r.tracer.Start(ctx, "UserRepo.UserGetByID")
 	defer span.End()
 
 	u, err := r.client.User.Get(ctx, id)

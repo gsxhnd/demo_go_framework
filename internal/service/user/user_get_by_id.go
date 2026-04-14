@@ -20,7 +20,7 @@ func (s *userService) GetUserByID(ctx context.Context, id int) (*UserResponse, e
 
 	s.log.DebugCtx(ctx, "getting user by id", zap.Int("id", id))
 
-	u, err := s.userRepo.GetByID(ctx, id)
+	u, err := s.userRepo.UserGetByID(ctx, id)
 	if err != nil {
 		s.log.WarnCtx(ctx, "user not found", zap.Int("id", id))
 		return nil, errno.UserNotFoundError

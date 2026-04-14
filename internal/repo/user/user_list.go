@@ -9,9 +9,16 @@ import (
 	"go.uber.org/zap"
 )
 
-// List 分页获取用户列表
-func (r *userRepo) List(ctx context.Context, req *ListUsersRequest) ([]*ent.User, int, error) {
-	ctx, span := r.tracer.Start(ctx, "UserRepo.List")
+// ListUsersRequest 分页查询请求
+type ListUsersRequest struct {
+	Page     int    `json:"page" validate:"omitempty,min=1"`
+	PageSize int    `json:"page_size" validate:"omitempty,min=1,max=100"`
+	Keyword  string `json:"keyword,omitempty"`
+}
+
+// UserList 分页获取用户列表
+func (r *userRepo) UserList(ctx context.Context, req *ListUsersRequest) ([]*ent.User, int, error) {
+	ctx, span := r.tracer.Start(ctx, "UserRepo.UserList")
 	defer span.End()
 
 	page := req.Page

@@ -9,9 +9,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// GetByEmail 根据邮箱获取用户
-func (r *userRepo) GetByEmail(ctx context.Context, email string) (*ent.User, error) {
-	ctx, span := r.tracer.Start(ctx, "UserRepo.GetByEmail")
+// UserGetByEmail 根据邮箱获取用户
+func (r *userRepo) UserGetByEmail(ctx context.Context, email string) (*ent.User, error) {
+	ctx, span := r.tracer.Start(ctx, "UserRepo.UserGetByEmail")
 	defer span.End()
 
 	u, err := r.client.User.Query().

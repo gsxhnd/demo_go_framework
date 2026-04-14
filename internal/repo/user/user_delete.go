@@ -6,9 +6,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// Delete 删除用户
-func (r *userRepo) Delete(ctx context.Context, id int) error {
-	ctx, span := r.tracer.Start(ctx, "UserRepo.Delete")
+// UserDelete 删除用户
+func (r *userRepo) UserDelete(ctx context.Context, id int) error {
+	ctx, span := r.tracer.Start(ctx, "UserRepo.UserDelete")
 	defer span.End()
 
 	err := r.client.User.DeleteOneID(id).Exec(ctx)

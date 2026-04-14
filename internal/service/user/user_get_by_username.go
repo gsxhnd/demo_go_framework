@@ -20,7 +20,7 @@ func (s *userService) GetUserByUsername(ctx context.Context, username string) (*
 
 	s.log.DebugCtx(ctx, "getting user by username", zap.String("username", username))
 
-	u, err := s.userRepo.GetByUsername(ctx, username)
+	u, err := s.userRepo.UserGetByUsername(ctx, username)
 	if err != nil {
 		s.log.WarnCtx(ctx, "user not found", zap.String("username", username))
 		return nil, errno.UserNotFoundError

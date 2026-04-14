@@ -20,7 +20,7 @@ func (s *userService) DeleteUser(ctx context.Context, id int) errno.Errno {
 
 	s.log.InfoCtx(ctx, "deleting user", zap.Int("id", id))
 
-	err := s.userRepo.Delete(ctx, id)
+	err := s.userRepo.UserDelete(ctx, id)
 	if err != nil {
 		s.log.ErrorCtx(ctx, "failed to delete user", zap.Error(err))
 		return errno.UserDeleteFailedError
