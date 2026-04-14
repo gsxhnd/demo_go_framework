@@ -5,8 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http/httptest"
-	"reflect"
-	"strings"
 	"testing"
 
 	"go_sample_code/internal/errno"
@@ -15,8 +13,8 @@ import (
 	userservice "go_sample_code/internal/service/user"
 	"go_sample_code/pkg/logger"
 	"go_sample_code/pkg/trace"
+	"go_sample_code/pkg/validator"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -76,35 +74,16 @@ func (m *mockUserService) ListUsers(ctx context.Context, req *userrepo.ListUsers
 
 // newTestValidator 创建用于测试的 validator 实例
 func newTestValidator() *validator.Validate {
-	v := validator.New()
-	// 设置 TagNameFunc，优先使用 json/query/params 标签名
-	v.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		name := fld.Tag.Get("json")
-		if name == "" {
-			name = fld.Tag.Get("query")
-		}
-		if name == "" {
-			name = fld.Tag.Get("params")
-		}
-		if name == "" {
-			name = fld.Name
-		}
-		// 移除 omitempty 等额外标签
-		if idx := strings.Index(name, ","); idx != -1 {
-			name = name[:idx]
-		}
-		return name
-	})
-
 	// 注册 UpdateUserRequest 结构级校验：至少传一个可更新字段
-	v.RegisterStructValidation(func(sl validator.StructLevel) {
-		req := sl.Current().Interface().(userhandler.UpdateUserRequest)
-		if req.Email == nil && req.Password == nil && req.Nickname == nil &&
-			req.Avatar == nil && req.Phone == nil && req.IsActive == nil {
-			sl.ReportError(reflect.ValueOf(req), "UpdateUserRequest", "", "at_least_one_field", "")
-		}
-	}, userhandler.UpdateUserRequest{})
-
+	v := validator.New(
+		validator.WithStructValidation(userhandler.UpdateUserRequest{}, func(sl validator.StructLevel) {
+			req := sl.Current().Interface().(userhandler.UpdateUserRequest)
+			if req.Email == nil && req.Password == nil && req.Nickname == nil &&
+				req.Avatar == nil && req.Phone == nil && req.IsActive == nil {
+				sl.ReportError(req, "UpdateUserRequest", "", "at_least_one_field", "")
+			}
+		}),
+	)
 	return v
 }
 

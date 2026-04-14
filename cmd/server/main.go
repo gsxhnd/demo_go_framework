@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"reflect"
-	"strings"
 	"time"
 
 	"go_sample_code/internal/database"
@@ -19,10 +17,10 @@ import (
 	"go_sample_code/pkg/logger"
 	"go_sample_code/pkg/metrics"
 	"go_sample_code/pkg/trace"
+	"go_sample_code/pkg/validator"
 
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
@@ -114,35 +112,8 @@ func NewFiberApp(cfg *AppConfig) *fiber.App {
 
 // NewValidator 创建全局 validator 实例
 func NewValidator() *validator.Validate {
-	v := validator.New()
-	// 设置 TagNameFunc，优先使用 json/query/params 标签名
-	v.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		name := fld.Tag.Get("json")
-		if name == "" {
-			name = fld.Tag.Get("query")
-		}
-		if name == "" {
-			name = fld.Tag.Get("params")
-		}
-		if name == "" {
-			name = fld.Name
-		}
-		// 移除 omitempty,validate 等额外标签
-		if idx := strings.Index(name, ","); idx != -1 {
-			name = name[:idx]
-		}
-		return name
-	})
-
 	// 注册 UpdateUserRequest 结构级校验：至少传一个可更新字段
-	v.RegisterStructValidation(func(sl validator.StructLevel) {
-		req := sl.Current().Interface().(userhandler.UpdateUserRequest)
-		if req.Email == nil && req.Password == nil && req.Nickname == nil &&
-			req.Avatar == nil && req.Phone == nil && req.IsActive == nil {
-			sl.ReportError(reflect.ValueOf(req), "UpdateUserRequest", "", "at_least_one_field", "")
-		}
-	}, userhandler.UpdateUserRequest{})
-
+	v := validator.New()
 	return v
 }
 
