@@ -149,6 +149,7 @@ func RegisterHooks(
 			log.Info("server started on :8080")
 			return nil
 		},
+		// graceful shutdown
 		OnStop: func(ctx context.Context) error {
 			log.Info("shutting down server")
 
