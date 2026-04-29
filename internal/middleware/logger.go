@@ -18,12 +18,14 @@ func Logger(log logger.Logger) fiber.Handler {
 		latency := time.Since(start)
 		status := c.Response().StatusCode()
 
-		log.Info("request",
+		// Use InfoCtx so the otelzap bridge picks up the active span's
+		// TraceId/SpanId and writes them into the OTel Log record.
+		log.InfoCtx(c.UserContext(), "",
 			zap.String("method", c.Method()),
 			zap.String("path", c.Path()),
+			zap.String("client_ip", c.IP()),
 			zap.Int("status", status),
 			zap.Duration("latency", latency),
-			zap.String("ip", c.IP()),
 		)
 
 		return err

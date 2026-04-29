@@ -169,7 +169,7 @@ func (l *logger) Debug(msg string, fields ...zap.Field) {
 
 func (l *logger) DebugCtx(ctx context.Context, msg string, fields ...zap.Field) {
 	f := l.traceExtract(ctx, fields...)
-	l.l.Debug(msg, f...)
+	l.l.Debug(msg, append(f, zapcore.Field{Type: zapcore.SkipType, Interface: ctx})...)
 }
 
 func (l *logger) Info(msg string, fields ...zap.Field) {
@@ -178,7 +178,7 @@ func (l *logger) Info(msg string, fields ...zap.Field) {
 
 func (l *logger) InfoCtx(ctx context.Context, msg string, fields ...zap.Field) {
 	f := l.traceExtract(ctx, fields...)
-	l.l.Info(msg, f...)
+	l.l.Info(msg, append(f, zapcore.Field{Type: zapcore.SkipType, Interface: ctx})...)
 }
 
 func (l *logger) Warn(msg string, fields ...zap.Field) {
@@ -186,7 +186,7 @@ func (l *logger) Warn(msg string, fields ...zap.Field) {
 }
 func (l *logger) WarnCtx(ctx context.Context, msg string, fields ...zap.Field) {
 	f := l.traceExtract(ctx, fields...)
-	l.l.Warn(msg, f...)
+	l.l.Warn(msg, append(f, zapcore.Field{Type: zapcore.SkipType, Interface: ctx})...)
 }
 
 func (l *logger) Error(msg string, fields ...zap.Field) {
@@ -194,7 +194,7 @@ func (l *logger) Error(msg string, fields ...zap.Field) {
 }
 func (l *logger) ErrorCtx(ctx context.Context, msg string, fields ...zap.Field) {
 	f := l.traceExtract(ctx, fields...)
-	l.l.Error(msg, f...)
+	l.l.Error(msg, append(f, zapcore.Field{Type: zapcore.SkipType, Interface: ctx})...)
 }
 
 func (l *logger) Panic(msg string, fields ...zap.Field) {
@@ -202,7 +202,7 @@ func (l *logger) Panic(msg string, fields ...zap.Field) {
 }
 func (l *logger) PanicCtx(ctx context.Context, msg string, fields ...zap.Field) {
 	f := l.traceExtract(ctx, fields...)
-	l.l.Panic(msg, f...)
+	l.l.Panic(msg, append(f, zapcore.Field{Type: zapcore.SkipType, Interface: ctx})...)
 }
 
 func (l *logger) traceExtract(ctx context.Context, fields ...zap.Field) []zap.Field {

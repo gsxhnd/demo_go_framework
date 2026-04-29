@@ -111,8 +111,24 @@ curl "http://localhost:8080/api/users?page=1&page_size=10"
 ### 中间件使用
 
 项目已内置中间件：
+
 - `Recovery` - panic 恢复
 - `Logger` - 请求日志记录
+- `Trace`
+
+```plain
+HTTP 请求
+  │  traceparent 头（如果有）
+  ▼
+Trace 中间件 → 创建/恢复 span，注入 ctx
+  ▼
+Logger 中间件 → InfoCtx(ctx) → otelzap bridge
+  │                ├─ TraceId = span.TraceID()   ← 写入 otel_logs.TraceId
+  │                              ├─ SpanId  = span.SpanID()    ← 写入 otel_logs.SpanId
+  │                              ├─ method/path/status/...     ← 写入 otel_logs.LogAttributes
+  │                              └─ Body = ""                  ← 写入 otel_logs.Body
+  └─ stdout JSON 也包含 trace_id/span_id（traceExtract 追加）
+```
 
 ### 数据库迁移
 
@@ -140,6 +156,7 @@ go test ./...
 欢迎提交 Issue 和 PR！
 
 请确保：
+
 - 代码通过 `go fmt` 格式化
 - 添加单元测试
 - 更新相关文档

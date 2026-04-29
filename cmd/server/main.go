@@ -132,9 +132,10 @@ func RegisterHooks(
 ) {
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			// Middleware 顺序: Recovery -> RateLimit -> Metrics -> Logger
+			// Middleware 顺序: Recovery -> RateLimit -> Trace -> Metrics -> Logger
 			app.Use(middleware.Recovery(log))
 			app.Use(middleware.RateLimit(middleware.DefaultRateLimitConfig(log)))
+			app.Use(middleware.Trace(tracerProvider))
 			app.Use(middleware.Metrics(httpMetrics))
 			app.Use(middleware.Logger(log))
 

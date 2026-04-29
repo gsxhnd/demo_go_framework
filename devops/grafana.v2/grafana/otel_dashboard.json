@@ -1,0 +1,1032 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "ads2hkz",
+    "namespace": "default",
+    "uid": "d5a707b1-5b55-417b-8918-bd3314a0143e",
+    "resourceVersion": "1777446531707020",
+    "generation": 7,
+    "creationTimestamp": "2026-04-29T05:49:06Z",
+    "labels": {
+      "grafana.app/deprecatedInternalID": "227506030747648"
+    },
+    "annotations": {
+      "grafana.app/createdBy": "user:bfkis4k5jhs74c",
+      "grafana.app/folder": "",
+      "grafana.app/saved-from-ui": "Grafana v13.0.1 (a100054f)",
+      "grafana.app/updatedBy": "user:bfkis4k5jhs74c",
+      "grafana.app/updatedTimestamp": "2026-04-29T07:08:51Z"
+    }
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana",
+            "version": "v0",
+            "datasource": {
+              "name": "grafana"
+            },
+            "spec": {
+              "limit": 100,
+              "matchAny": false,
+              "tags": [],
+              "type": "dashboard"
+            }
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "builtIn": true
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "editable": true,
+    "elements": {
+      "panel-11": {
+        "kind": "Panel",
+        "spec": {
+          "id": 11,
+          "title": "All Logs",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-clickhouse-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "builderOptions": {
+                          "columns": [
+                            {
+                              "alias": "TraceId",
+                              "custom": false,
+                              "name": "TraceId",
+                              "type": "String"
+                            },
+                            {
+                              "alias": "SeverityText",
+                              "custom": false,
+                              "name": "SeverityText",
+                              "type": "LowCardinality(String)"
+                            },
+                            {
+                              "alias": "SpanId",
+                              "custom": false,
+                              "name": "SpanId",
+                              "type": "String"
+                            },
+                            {
+                              "alias": "LogAttributes",
+                              "custom": false,
+                              "name": "LogAttributes",
+                              "type": "Map(LowCardinality(String), String)"
+                            },
+                            {
+                              "alias": "Body",
+                              "custom": false,
+                              "name": "Body",
+                              "type": "String"
+                            },
+                            {
+                              "hint": "time",
+                              "name": "Timestamp",
+                              "type": "DateTime64(9)"
+                            },
+                            {
+                              "alias": "SeverityText",
+                              "hint": "log_level",
+                              "name": "SeverityText",
+                              "type": "LowCardinality(String)"
+                            },
+                            {
+                              "alias": "Body",
+                              "hint": "log_message",
+                              "name": "Body",
+                              "type": "String"
+                            }
+                          ],
+                          "database": "otel",
+                          "filters": [
+                            {
+                              "condition": "AND",
+                              "filterType": "custom",
+                              "hint": "filter_time",
+                              "key": "",
+                              "operator": "WITH IN DASHBOARD TIME RANGE",
+                              "type": "datetime"
+                            },
+                            {
+                              "condition": "AND",
+                              "filterType": "custom",
+                              "hint": "log_level",
+                              "key": "",
+                              "operator": "IS ANYTHING",
+                              "type": "string"
+                            }
+                          ],
+                          "limit": 1000,
+                          "meta": {
+                            "logMessageLike": "",
+                            "otelVersion": "latest"
+                          },
+                          "mode": "list",
+                          "orderBy": [
+                            {
+                              "default": true,
+                              "dir": "DESC",
+                              "hint": "filter_time",
+                              "name": ""
+                            },
+                            {
+                              "default": true,
+                              "dir": "DESC",
+                              "hint": "time",
+                              "name": ""
+                            }
+                          ],
+                          "queryType": "logs",
+                          "table": "otel_logs"
+                        },
+                        "editorType": "builder",
+                        "format": 2,
+                        "pluginVersion": "4.15.0",
+                        "rawSql": "SELECT Timestamp as \"timestamp\", Body as \"body\", SeverityText as \"level\", TraceId, SeverityText, SpanId, LogAttributes, Body FROM \"otel\".\"otel_logs\" WHERE ( timestamp >= $__fromTime AND timestamp <= $__toTime ) ORDER BY timestamp DESC LIMIT 1000"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "logs",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "dedupStrategy": "none",
+                "displayedFields": [
+                  "LogAttributes.client_ip",
+                  "LogAttributes.method",
+                  "LogAttributes.status",
+                  "LogAttributes.path",
+                  "Body"
+                ],
+                "enableInfiniteScrolling": false,
+                "enableLogDetails": true,
+                "prettifyLogMessage": false,
+                "showCommonLabels": false,
+                "showControls": false,
+                "showFieldSelector": false,
+                "showLabels": false,
+                "showLevel": true,
+                "showTime": true,
+                "sortOrder": "Descending",
+                "timestampResolution": "ms",
+                "unwrappedColumns": false,
+                "wrapLogMessage": false
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "TraceId"
+                    },
+                    "properties": []
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-12": {
+        "kind": "Panel",
+        "spec": {
+          "id": 12,
+          "title": "New Panel",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-clickhouse-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "clickhouse"
+                      },
+                      "spec": {
+                        "builderOptions": {
+                          "columns": [
+                            {
+                              "alias": "TraceId",
+                              "custom": false,
+                              "name": "TraceId",
+                              "type": "String"
+                            },
+                            {
+                              "alias": "SeverityText",
+                              "custom": false,
+                              "name": "SeverityText",
+                              "type": "LowCardinality(String)"
+                            },
+                            {
+                              "alias": "SpanId",
+                              "custom": false,
+                              "name": "SpanId",
+                              "type": "String"
+                            },
+                            {
+                              "alias": "LogAttributes",
+                              "custom": false,
+                              "name": "LogAttributes",
+                              "type": "Map(LowCardinality(String), String)"
+                            },
+                            {
+                              "hint": "time",
+                              "name": "Timestamp",
+                              "type": "DateTime64(9)"
+                            },
+                            {
+                              "alias": "SeverityText",
+                              "hint": "log_level",
+                              "name": "SeverityText",
+                              "type": "LowCardinality(String)"
+                            },
+                            {
+                              "alias": "Body",
+                              "hint": "log_message",
+                              "name": "Body",
+                              "type": "String"
+                            }
+                          ],
+                          "database": "otel",
+                          "filters": [],
+                          "limit": 1000,
+                          "meta": {
+                            "logMessageLike": "",
+                            "minimized": false,
+                            "otelVersion": "latest"
+                          },
+                          "mode": "list",
+                          "orderBy": [
+                            {
+                              "dir": "DESC",
+                              "hint": "time",
+                              "name": ""
+                            }
+                          ],
+                          "queryType": "logs",
+                          "table": "otel_logs"
+                        },
+                        "editorType": "builder",
+                        "format": 2,
+                        "pluginVersion": "4.15.0",
+                        "rawSql": "SELECT Timestamp as \"timestamp\", Body as \"body\", SeverityText as \"level\", TraceId, SeverityText, SpanId, LogAttributes FROM \"otel\".\"otel_logs\" ORDER BY timestamp DESC LIMIT 1000"
+                      }
+                    },
+                    "refId": "Trace Logs",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "logs",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "dedupStrategy": "none",
+                "enableInfiniteScrolling": false,
+                "enableLogDetails": true,
+                "prettifyLogMessage": true,
+                "showControls": false,
+                "showFieldSelector": false,
+                "showLevel": true,
+                "showTime": false,
+                "sortOrder": "Descending",
+                "timestampResolution": "ms",
+                "unwrappedColumns": false,
+                "wrapLogMessage": false
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "id": 4,
+          "title": "Traces",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-clickhouse-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "clickhouse"
+                      },
+                      "spec": {
+                        "builderOptions": {
+                          "columns": [
+                            {
+                              "hint": "trace_id",
+                              "name": "TraceId"
+                            },
+                            {
+                              "hint": "trace_span_id",
+                              "name": "SpanId"
+                            },
+                            {
+                              "hint": "trace_parent_span_id",
+                              "name": "ParentSpanId"
+                            },
+                            {
+                              "hint": "trace_service_name",
+                              "name": "ServiceName"
+                            },
+                            {
+                              "hint": "trace_operation_name",
+                              "name": "SpanName"
+                            },
+                            {
+                              "hint": "time",
+                              "name": "Timestamp"
+                            },
+                            {
+                              "hint": "trace_duration_time",
+                              "name": "Duration"
+                            },
+                            {
+                              "hint": "trace_tags",
+                              "name": "SpanAttributes"
+                            },
+                            {
+                              "hint": "trace_service_tags",
+                              "name": "ResourceAttributes"
+                            },
+                            {
+                              "hint": "trace_service_tags",
+                              "name": "ResourceAttributes"
+                            },
+                            {
+                              "hint": "trace_kind",
+                              "name": "SpanKind"
+                            },
+                            {
+                              "hint": "trace_status_code",
+                              "name": "StatusCode"
+                            },
+                            {
+                              "hint": "trace_status_message",
+                              "name": "StatusMessage"
+                            },
+                            {
+                              "hint": "trace_state",
+                              "name": "TraceState"
+                            }
+                          ],
+                          "database": "otel",
+                          "filters": [],
+                          "limit": 1000,
+                          "meta": {
+                            "flattenNested": false,
+                            "hasTraceTimestampTable": true,
+                            "isTraceIdMode": false,
+                            "otelEnabled": true,
+                            "otelVersion": "latest",
+                            "traceDurationUnit": "nanoseconds",
+                            "traceEventsColumnPrefix": "Events",
+                            "traceId": "",
+                            "traceLinksColumnPrefix": "Links"
+                          },
+                          "mode": "list",
+                          "orderBy": [
+                            {
+                              "default": true,
+                              "dir": "DESC",
+                              "hint": "time",
+                              "name": ""
+                            },
+                            {
+                              "default": true,
+                              "dir": "DESC",
+                              "hint": "trace_duration_time",
+                              "name": ""
+                            }
+                          ],
+                          "queryType": "traces",
+                          "table": "otel_traces"
+                        },
+                        "editorType": "builder",
+                        "format": 1,
+                        "meta": {
+                          "builderOptions": {
+                            "columns": [],
+                            "database": "default",
+                            "filters": [
+                              {
+                                "condition": "AND",
+                                "filterType": "custom",
+                                "key": "Timestamp",
+                                "operator": "WITH IN DASHBOARD TIME RANGE",
+                                "restrictToFields": [
+                                  {
+                                    "label": "Timestamp",
+                                    "name": "Timestamp",
+                                    "picklistValues": [],
+                                    "type": "DateTime64(9)"
+                                  }
+                                ],
+                                "type": "datetime"
+                              }
+                            ],
+                            "limit": 100,
+                            "mode": "list",
+                            "orderBy": [],
+                            "queryType": "table",
+                            "table": "otel_traces"
+                          }
+                        },
+                        "pluginVersion": "4.15.0",
+                        "queryType": "table",
+                        "rawSql": "SELECT \"TraceId\" as traceID, \"ServiceName\" as serviceName, \"SpanName\" as operationName, \"Timestamp\" as startTime, multiply(\"Duration\", 0.000001) as duration FROM \"otel\".\"otel_traces\" ORDER BY Timestamp DESC, Duration DESC LIMIT 1000"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": true,
+                    "displayName": "Duration"
+                  }
+                ]
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Trace ID"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 290
+                      },
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "View Trace Details",
+                            "url": "/d/otel-clickhouse?${__url_time_range}&${serviceName:queryparam}&var-trace_id=${__value.raw}"
+                          },
+                          {
+                            "title": "View Logs for Trace",
+                            "url": "/d/otel-clickhouse?${__url_time_range}&var-trace_id=${__value.raw}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Service Name"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 184
+                      },
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Filter by Service",
+                            "url": "/d/otel-clickhouse?${__url_time_range}&${trace_id:queryparam}&var-serviceName=${__value.raw}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Duration"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "ms"
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "lcd",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "timestamp"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 216
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Service Tags"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.inspect",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "timestamp"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 248
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "timestamp"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 234
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "id": 6,
+          "title": "Trace Details",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "grafana-clickhouse-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "builderOptions": {
+                          "columns": [
+                            {
+                              "hint": "trace_id",
+                              "name": "TraceId"
+                            },
+                            {
+                              "hint": "trace_span_id",
+                              "name": "SpanId"
+                            },
+                            {
+                              "hint": "trace_parent_span_id",
+                              "name": "ParentSpanId"
+                            },
+                            {
+                              "hint": "trace_service_name",
+                              "name": "ServiceName"
+                            },
+                            {
+                              "hint": "trace_operation_name",
+                              "name": "SpanName"
+                            },
+                            {
+                              "hint": "time",
+                              "name": "Timestamp"
+                            },
+                            {
+                              "hint": "trace_duration_time",
+                              "name": "Duration"
+                            },
+                            {
+                              "hint": "trace_tags",
+                              "name": "SpanAttributes"
+                            },
+                            {
+                              "hint": "trace_service_tags",
+                              "name": "ResourceAttributes"
+                            },
+                            {
+                              "hint": "trace_service_tags",
+                              "name": "ResourceAttributes"
+                            },
+                            {
+                              "hint": "trace_kind",
+                              "name": "SpanKind"
+                            },
+                            {
+                              "hint": "trace_status_code",
+                              "name": "StatusCode"
+                            },
+                            {
+                              "hint": "trace_status_message",
+                              "name": "StatusMessage"
+                            },
+                            {
+                              "hint": "trace_state",
+                              "name": "TraceState"
+                            }
+                          ],
+                          "database": "otel",
+                          "filters": [],
+                          "limit": 1000,
+                          "meta": {
+                            "flattenNested": false,
+                            "hasTraceTimestampTable": true,
+                            "isTraceIdMode": true,
+                            "otelEnabled": true,
+                            "otelVersion": "latest",
+                            "traceDurationUnit": "nanoseconds",
+                            "traceEventsColumnPrefix": "Events",
+                            "traceId": "${trace_id}",
+                            "traceLinksColumnPrefix": "Links"
+                          },
+                          "mode": "list",
+                          "orderBy": [
+                            {
+                              "default": true,
+                              "dir": "DESC",
+                              "hint": "time",
+                              "name": ""
+                            },
+                            {
+                              "default": true,
+                              "dir": "DESC",
+                              "hint": "trace_duration_time",
+                              "name": ""
+                            }
+                          ],
+                          "queryType": "traces",
+                          "table": "otel_traces"
+                        },
+                        "editorType": "builder",
+                        "format": 3,
+                        "meta": {
+                          "builderOptions": {
+                            "columns": [],
+                            "database": "",
+                            "limit": 100,
+                            "mode": "list",
+                            "queryType": "table",
+                            "table": ""
+                          }
+                        },
+                        "pluginVersion": "4.15.0",
+                        "queryType": "traces",
+                        "rawSql": "SELECT \"TraceId\" as traceID, \"SpanId\" as spanID, \"ParentSpanId\" as parentSpanID, \"ServiceName\" as serviceName, \"SpanName\" as operationName, multiply(toUnixTimestamp64Nano(\"Timestamp\"), 0.000001) as startTime, multiply(\"Duration\", 0.000001) as duration, arrayMap(key -> map('key', key, 'value',\"SpanAttributes\"[key]), mapKeys(\"SpanAttributes\")) as tags, arrayMap(key -> map('key', key, 'value',\"ResourceAttributes\"[key]), mapKeys(\"ResourceAttributes\")) as serviceTags, if(\"StatusCode\" IN ('Error', 'STATUS_CODE_ERROR'), 2, 0) as statusCode, arrayMap((name, timestamp, attributes) -> tuple(name, toString(toUnixTimestamp64Milli(timestamp)), arrayMap( key -> map('key', key, 'value', attributes[key]), mapKeys(attributes)))::Tuple(name String, timestamp String, fields Array(Map(String, String))), \"Events\".Name, \"Events\".Timestamp, \"Events\".Attributes) AS logs, arrayMap((traceID, spanID, attributes) -> tuple(traceID, spanID, arrayMap(key -> map('key', key, 'value', attributes[key]), mapKeys(attributes)))::Tuple(traceID String, spanID String, tags Array(Map(String, String))), \"Links\".TraceId, \"Links\".SpanId, \"Links\".Attributes) AS references, \"SpanKind\" as kind, \"StatusMessage\" as statusMessage, \"TraceState\" as traceState FROM \"otel\".\"otel_traces\" WHERE traceID = '${trace_id}' AND \"Timestamp\" >= $__fromTime AND \"Timestamp\" <= $__toTime ORDER BY Timestamp DESC, Duration DESC LIMIT 1000"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "traces",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "spanFilters": {
+                  "adhocFilters": [],
+                  "criticalPathOnly": false,
+                  "matchesOnly": false
+                }
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "RowsLayout",
+      "spec": {
+        "rows": [
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "Traces",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 12,
+                        "height": 22,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-4"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 0,
+                        "width": 12,
+                        "height": 22,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-6"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 22,
+                        "width": 24,
+                        "height": 19,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-12"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "Logs",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 24,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-11"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [],
+    "timeSettings": {
+      "timezone": "browser",
+      "from": "now-1h",
+      "to": "now",
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "hideTimepicker": false,
+      "fiscalYearStartMonth": 0
+    },
+    "title": "Simple ClickHouse OTel Dashboard",
+    "variables": [
+      {
+        "kind": "DatasourceVariable",
+        "spec": {
+          "name": "datasource",
+          "pluginId": "grafana-clickhouse-datasource",
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "label": "ClickHouse instance",
+          "hide": "dontHide",
+          "skipUrlSync": false,
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "serviceName",
+          "current": {
+            "text": ["All"],
+            "value": ["$__all"]
+          },
+          "label": "Service Name",
+          "hide": "dontHide",
+          "refresh": "onDashboardLoad",
+          "skipUrlSync": false,
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana-clickhouse-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "${datasource}"
+            },
+            "spec": {
+              "__legacyStringValue": "SELECT DISTINCT ServiceName FROM otel_traces"
+            }
+          },
+          "regex": "",
+          "regexApplyTo": "value",
+          "sort": "disabled",
+          "definition": "SELECT DISTINCT ServiceName FROM otel_traces",
+          "options": [],
+          "multi": true,
+          "includeAll": true,
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "trace_id",
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          },
+          "label": "Trace Id",
+          "hide": "dontHide",
+          "refresh": "onDashboardLoad",
+          "skipUrlSync": false,
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana-clickhouse-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "${datasource}"
+            },
+            "spec": {
+              "__legacyStringValue": "SELECT DISTINCT TraceId FROM otel_traces WHERE ParentSpanId = '' LIMIT 100"
+            }
+          },
+          "regex": "",
+          "regexApplyTo": "value",
+          "sort": "disabled",
+          "definition": "SELECT DISTINCT TraceId FROM otel_traces WHERE ParentSpanId = '' LIMIT 100",
+          "options": [],
+          "multi": false,
+          "includeAll": true,
+          "allValue": "ALL",
+          "allowCustomValue": true
+        }
+      }
+    ]
+  }
+}
