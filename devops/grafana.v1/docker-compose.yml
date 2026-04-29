@@ -1,8 +1,8 @@
 # =============================================================================
-# Docker Compose 配置 - 监控栈
+# Docker Compose 配置 - Grafana v1 监控栈
 # =============================================================================
-# 用途：单独启动可观测性服务（Prometheus、Grafana、Tempo、Loki、OTel Collector）
-# 启动命令：docker-compose -f docker-compose.monitoring.yml up -d
+# 用途：可观测性服务（Prometheus、Grafana、Tempo、Loki、OTel Collector）
+# 启动命令：docker compose up -d
 # =============================================================================
 
 services:
@@ -29,7 +29,6 @@ services:
       - ./loki/config.yaml:/etc/loki/local-config.yaml:ro
     networks:
       - app-network
-
 
   prometheus:
     image: prom/prometheus:v3.11.1
@@ -71,7 +70,6 @@ services:
       - tempo
       - loki
       - prometheus
-
 
   grafana:
     image: grafana/grafana:10.3.3

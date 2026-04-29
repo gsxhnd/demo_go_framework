@@ -1,0 +1,92 @@
+# =============================================================================
+# OpenTelemetry Collector 配置文件 - Grafana v2
+# =============================================================================
+# 用途：接收应用 OTLP 数据，统一写入 ClickHouse
+# 架构：Go App -> OTel Collector -> ClickHouse -> Grafana v2
+# =============================================================================
+
+receivers:
+  # OTLP 接收器：支持 gRPC 和 HTTP 两种协议
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # 批处理器：降低 ClickHouse 写入压力
+  batch:
+    send_batch_size: 1024
+    timeout: 1s
+    send_batch_max_size: 2048
+
+  # 内存限制器：防止 Collector 内存失控
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  # 资源属性补全：确保 service.name 存在
+  resource:
+    attributes:
+      - key: service.name
+        action: insert
+        from_attribute: service.name
+
+exporters:
+  # ClickHouse 导出器 - traces / metrics / logs 统一写入
+  clickhouse:
+    endpoint: tcp://clickhouse:9000
+    database: otel
+    ttl: 720h # 数据保留 30 天（与建表 TTL 一致）
+    logs_table_name: otel_logs
+    traces_table_name: otel_traces
+    # metrics_tables:
+    #   gauge:                  otel_metrics_gauge
+    #   sum:                    otel_metrics_sum
+    #   histogram:              otel_metrics_histogram
+    #   exponential_histogram:  otel_metrics_exponential_histogram
+    #   summary:                otel_metrics_summary
+    compress: lz4
+    timeout: 10s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+    sending_queue:
+      enabled: true
+      num_consumers: 4
+      queue_size: 100
+
+  # 调试导出器（可按需关闭）
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+    path: /health
+
+service:
+  extensions: [health_check]
+  telemetry:
+    logs:
+      level: info
+
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [clickhouse, debug]
+
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [clickhouse, debug]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [clickhouse, debug]

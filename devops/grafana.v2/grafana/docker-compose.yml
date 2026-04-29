@@ -1,0 +1,51 @@
+# =============================================================================
+# Docker Compose 配置 - Grafana v2
+# =============================================================================
+# 用途：单独启动 Grafana OSS 13.0.1（ClickHouse 数据源）
+# 启动命令：docker compose up -d
+# 依赖：需要先启动 clickhouse/docker-compose.yml
+# =============================================================================
+
+services:
+  grafana-v2:
+    image: grafana/grafana-oss:13.0.1
+    container_name: ${COMPOSE_PROJECT_NAME:-demo}-grafana-v2
+    restart: unless-stopped
+    ports:
+      - "${GRAFANA_V2_PORT:-3000}:3000"
+    environment:
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+      GF_SECURITY_COOKIE_SECURE: "false"
+      GF_SECURITY_COOKIE_SAMESITE: "lax"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_PATHS_DATA: /var/lib/grafana
+      GF_PATHS_LOGS: /var/log/grafana
+      GF_PATHS_PLUGINS: /var/lib/grafana/plugins
+      GF_INSTALL_PLUGINS: grafana-clickhouse-datasource
+    volumes:
+      - ./config.ini:/etc/grafana/grafana.ini:ro
+      - ./provisioning:/etc/grafana/provisioning:ro
+      - grafana-v2-data:/var/lib/grafana
+    networks:
+      - app-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider
+            http://localhost:3000/api/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  grafana-v2-data:
+    name: ${COMPOSE_PROJECT_NAME:-demo}-grafana-v2-data
+
+networks:
+  app-network:
+    driver: bridge
+    name: ${COMPOSE_PROJECT_NAME:-demo}-network

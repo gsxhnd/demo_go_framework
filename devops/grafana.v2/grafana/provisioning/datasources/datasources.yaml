@@ -1,0 +1,26 @@
+# =============================================================================
+# Grafana v2 数据源配置文件
+# =============================================================================
+# 用途：自动配置 Grafana 数据源（ClickHouse）
+# =============================================================================
+
+apiVersion: 1
+
+datasources:
+  # --------------------------------------------------------------------------
+  # ClickHouse 数据源
+  # --------------------------------------------------------------------------
+  - name: ClickHouse
+    type: grafana-clickhouse-datasource
+    uid: clickhouse
+    access: proxy
+    url: http://clickhouse:8123
+    isDefault: true
+    editable: false
+    jsonData:
+      host: clickhouse
+      port: 9000
+      protocol: native
+      defaultDatabase: otel
+      tlsSkipVerify: true
+    version: 1
