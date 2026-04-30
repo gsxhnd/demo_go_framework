@@ -15,7 +15,7 @@ func (h *handler) Check(c *fiber.Ctx) error {
 
 	status := h.healthChecker.Check(ctx)
 
-	if status.Data.Status != database.StatusDegraded {
+	if status.Data.Status != database.StatusOK {
 		h.log.ErrorCtx(ctx, "health_check_failed", zap.Any("status", status))
 	}
 

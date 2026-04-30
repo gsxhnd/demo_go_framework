@@ -34,9 +34,6 @@ func WithStructValidation(v interface{}, fn StructValidationFunc) Option {
 }
 
 // New 创建验证器实例
-// 默认配置：
-//   - TagNameFunc: 优先使用 json/query/params 标签名
-//   - 支持自定义结构级校验
 func New(opts ...Option) *Validate {
 	v := validator.New(validator.WithRequiredStructEnabled(), validator.WithPrivateFieldValidation())
 

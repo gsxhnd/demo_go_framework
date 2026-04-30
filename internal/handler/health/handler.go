@@ -18,9 +18,10 @@ type handler struct {
 	tracer        otel_trace.Tracer
 }
 
-func NewHandler(log logger.Logger, healthChecker database.HealthChecker) Handler {
+func NewHandler(log logger.Logger, healthChecker database.HealthChecker, tracer otel_trace.Tracer) Handler {
 	return &handler{
 		log:           log,
 		healthChecker: healthChecker,
+		tracer:        tracer,
 	}
 }

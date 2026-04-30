@@ -1,7 +1,6 @@
 package health_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http/httptest"
 	"testing"
@@ -9,6 +8,7 @@ import (
 	"go_sample_code/internal/database"
 	healthhandler "go_sample_code/internal/handler/health"
 	"go_sample_code/pkg/logger"
+	"go_sample_code/pkg/trace"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
@@ -34,7 +34,9 @@ func TestCheck_Healthy(t *testing.T) {
 	}
 	healthChecker := database.NewMockHealthChecker(healthyStatus)
 
-	h := healthhandler.NewHandler(log, healthChecker)
+	tp, _ := trace.NewInMemoryProvider()
+	tracer := trace.NewTracer(tp)
+	h := healthhandler.NewHandler(log, healthChecker, tracer)
 
 	app := fiber.New()
 	app.Get("/api/health", h.Check)
@@ -84,7 +86,9 @@ func TestCheck_Degraded(t *testing.T) {
 	}
 	healthChecker := database.NewMockHealthChecker(degradedStatus)
 
-	h := healthhandler.NewHandler(log, healthChecker)
+	tp, _ := trace.NewInMemoryProvider()
+	tracer := trace.NewTracer(tp)
+	h := healthhandler.NewHandler(log, healthChecker, tracer)
 
 	app := fiber.New()
 	app.Get("/api/health", h.Check)
@@ -130,7 +134,9 @@ func TestCheck_RedisDegraded(t *testing.T) {
 	}
 	healthChecker := database.NewMockHealthChecker(degradedStatus)
 
-	h := healthhandler.NewHandler(log, healthChecker)
+	tp, _ := trace.NewInMemoryProvider()
+	tracer := trace.NewTracer(tp)
+	h := healthhandler.NewHandler(log, healthChecker, tracer)
 
 	app := fiber.New()
 	app.Get("/api/health", h.Check)
@@ -152,13 +158,4 @@ func TestCheck_RedisDegraded(t *testing.T) {
 	redis, ok := data["redis"].(map[string]any)
 	require.True(t, ok)
 	assert.Equal(t, "down", redis["status"])
-}
-
-// mockHealthChecker implements database.HealthChecker for testing
-type mockHealthChecker struct {
-	status *database.HealthStatus
-}
-
-func (m *mockHealthChecker) Check(ctx context.Context) *database.HealthStatus {
-	return m.status
 }

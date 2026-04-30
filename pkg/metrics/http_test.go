@@ -13,7 +13,7 @@ func TestNewHTTPRecorder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create meter provider: %v", err)
 	}
-	defer mp.Shutdown(nil)
+	defer mp.Shutdown(context.Background())
 
 	recorder, err := NewHTTPRecorder(mp)
 	if err != nil {
@@ -45,7 +45,7 @@ func TestHTTPRecorder_RecordRequest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create meter provider: %v", err)
 	}
-	defer mp.Shutdown(nil)
+	defer mp.Shutdown(context.Background())
 
 	recorder, err := NewHTTPRecorder(mp)
 	if err != nil {
@@ -93,7 +93,7 @@ func TestHTTPRecorder_ActiveRequestAdd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create meter provider: %v", err)
 	}
-	defer mp.Shutdown(nil)
+	defer mp.Shutdown(context.Background())
 
 	recorder, err := NewHTTPRecorder(mp)
 	if err != nil {
@@ -188,7 +188,7 @@ func TestHTTPRecorder_MultipleRecordings(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create meter provider: %v", err)
 	}
-	defer mp.Shutdown(nil)
+	defer mp.Shutdown(context.Background())
 
 	recorder, err := NewHTTPRecorder(mp)
 	if err != nil {

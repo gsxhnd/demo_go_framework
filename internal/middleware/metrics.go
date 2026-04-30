@@ -48,7 +48,7 @@ func Metrics(recorder *metrics.HTTPRecorder) fiber.Handler {
 		start := time.Now()
 
 		// 获取路由信息
-		route := getRoute(c)
+		route := GetRoute(c)
 
 		// 增加活跃请求数
 		recorder.ActiveRequestAdd(c.Context(), 1)
@@ -62,7 +62,7 @@ func Metrics(recorder *metrics.HTTPRecorder) fiber.Handler {
 		// 获取响应信息
 		statusCode := c.Response().StatusCode()
 		durationMs := float64(time.Since(start).Milliseconds())
-		protocol := getProtocol(c)
+		protocol := GetProtocol(c)
 		hasError := err != nil || statusCode >= 500
 
 		// 记录 metrics
@@ -79,9 +79,9 @@ func Metrics(recorder *metrics.HTTPRecorder) fiber.Handler {
 	}
 }
 
-// getRoute 获取路由路径
+// GetRoute 获取路由路径
 // 优先使用 Route().Path 作为 route，避免高基数问题
-func getRoute(c *fiber.Ctx) string {
+func GetRoute(c *fiber.Ctx) string {
 	// 优先使用路由模板路径
 	if c.Route().Path != "" {
 		return c.Route().Path
@@ -90,8 +90,8 @@ func getRoute(c *fiber.Ctx) string {
 	return c.Path()
 }
 
-// getProtocol 获取协议版本
-func getProtocol(c *fiber.Ctx) string {
+// GetProtocol 获取协议版本
+func GetProtocol(c *fiber.Ctx) string {
 	proto := c.Protocol()
 	if proto == "" {
 		// 从请求中检测
@@ -112,7 +112,7 @@ func MetricsWithStatusCode(recorder *metrics.HTTPRecorder, getStatusCode func(*f
 	return func(c *fiber.Ctx) error {
 		start := time.Now()
 
-		route := getRoute(c)
+		route := GetRoute(c)
 		recorder.ActiveRequestAdd(c.Context(), 1)
 
 		err := c.Next()
@@ -120,7 +120,7 @@ func MetricsWithStatusCode(recorder *metrics.HTTPRecorder, getStatusCode func(*f
 
 		statusCode := getStatusCode(c)
 		durationMs := float64(time.Since(start).Milliseconds())
-		protocol := getProtocol(c)
+		protocol := GetProtocol(c)
 		hasError := err != nil || statusCode >= 500
 
 		recorder.RecordRequest(c.Context(), metrics.HTTPRequestInfo{

@@ -29,25 +29,6 @@ func (h *handler) parseAndValidateBody(c *fiber.Ctx, req any) bool {
 	return false
 }
 
-// parseAndValidateQuery 解析并校验查询参数
-// 返回 true 表示校验失败（已设置响应），返回 false 表示校验通过
-func (h *handler) parseAndValidateQuery(c *fiber.Ctx, req any) bool {
-	ctx := c.UserContext()
-	if err := c.QueryParser(req); err != nil {
-		h.log.ErrorCtx(ctx, "failed to parse query parameters", zap.Error(err))
-		_ = c.Status(errno.RequestParserError.GetHTTPStatus()).JSON(errno.Decode(nil, errno.RequestParserError))
-		return true
-	}
-
-	if err := h.validate.Struct(req); err != nil {
-		h.log.WarnCtx(ctx, "query validation failed", zap.Error(err))
-		_ = c.Status(errno.RequestValidateError.GetHTTPStatus()).JSON(errno.Decode(nil, errno.RequestValidateError))
-		return true
-	}
-
-	return false
-}
-
 // parseAndValidateParams 解析并校验路径参数
 // 返回 true 表示校验失败（已设置响应），返回 false 表示校验通过
 func (h *handler) parseAndValidateParams(c *fiber.Ctx, req any) bool {

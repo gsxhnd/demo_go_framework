@@ -152,79 +152,23 @@ func TestCreate_PasswordTooShort(t *testing.T) {
 	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
 }
 
-func TestUpdate_InvalidID(t *testing.T) {
+func TestCreate_Success(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Put("/api/users/:id", h.UserUpdate)
+	app.Post("/api/users", h.UserCreate)
 
-	// 无效的 id（非数字）
-	body := `{"nickname":"newname"}`
-	req := httptest.NewRequest("PUT", "/api/users/abc", bytes.NewBufferString(body))
+	body := `{"username":"testuser","email":"test@example.com","password":"password123"}`
+	req := httptest.NewRequest("POST", "/api/users", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-}
+	assert.Equal(t, fiber.StatusCreated, resp.StatusCode)
 
-func TestUpdate_IDLessThanOrEqualZero(t *testing.T) {
-	h := newTestHandler(t)
-
-	app := fiber.New()
-	app.Put("/api/users/:id", h.UserUpdate)
-
-	// id <= 0
-	body := `{"nickname":"newname"}`
-	req := httptest.NewRequest("PUT", "/api/users/0", bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := app.Test(req)
+	var result map[string]any
+	err = json.NewDecoder(resp.Body).Decode(&result)
 	require.NoError(t, err)
-	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-}
-
-func TestUpdate_EmptyBody(t *testing.T) {
-	h := newTestHandler(t)
-
-	app := fiber.New()
-	app.Put("/api/users/:id", h.UserUpdate)
-
-	// 空 body（没有传任何可更新字段）
-	body := `{}`
-	req := httptest.NewRequest("PUT", "/api/users/1", bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := app.Test(req)
-	require.NoError(t, err)
-	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-}
-
-func TestUpdate_InvalidEmail(t *testing.T) {
-	h := newTestHandler(t)
-
-	app := fiber.New()
-	app.Put("/api/users/:id", h.UserUpdate)
-
-	// 无效的 email 格式
-	body := `{"email":"invalid-email"}`
-	req := httptest.NewRequest("PUT", "/api/users/1", bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := app.Test(req)
-	require.NoError(t, err)
-	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-}
-
-func TestUpdate_PasswordTooShort(t *testing.T) {
-	h := newTestHandler(t)
-
-	app := fiber.New()
-	app.Put("/api/users/:id", h.UserUpdate)
-
-	// password 太短
-	body := `{"password":"123"}`
-	req := httptest.NewRequest("PUT", "/api/users/1", bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := app.Test(req)
-	require.NoError(t, err)
-	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, float64(errno.OK.GetCode()), result["code"])
 }
 
 func TestGetByID_InvalidID(t *testing.T) {
@@ -253,13 +197,149 @@ func TestGetByID_IDLessThanOrEqualZero(t *testing.T) {
 	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
 }
 
+func TestGetByID_Success(t *testing.T) {
+	h := newTestHandler(t)
+
+	app := fiber.New()
+	app.Get("/api/users/:id", h.UserGetByID)
+
+	req := httptest.NewRequest("GET", "/api/users/1", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+
+	var result map[string]any
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	require.NoError(t, err)
+	assert.Equal(t, float64(errno.OK.GetCode()), result["code"])
+}
+
+func TestGetByEmail_InvalidEmail(t *testing.T) {
+	h := newTestHandler(t)
+
+	app := fiber.New()
+	app.Get("/api/users/email/:email", h.UserGetByEmail)
+
+	req := httptest.NewRequest("GET", "/api/users/email/invalid-email", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
+}
+
+func TestGetByEmail_Success(t *testing.T) {
+	h := newTestHandler(t)
+
+	app := fiber.New()
+	app.Get("/api/users/email/:email", h.UserGetByEmail)
+
+	req := httptest.NewRequest("GET", "/api/users/email/test@example.com", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+}
+
+func TestGetByUsername_Success(t *testing.T) {
+	h := newTestHandler(t)
+
+	app := fiber.New()
+	app.Get("/api/users/username/:username", h.UserGetByUsername)
+
+	req := httptest.NewRequest("GET", "/api/users/username/testuser", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+}
+
+func TestUpdate_InvalidID(t *testing.T) {
+	h := newTestHandler(t)
+
+	app := fiber.New()
+	app.Put("/api/users/:id", h.UserUpdate)
+
+	body := `{"nickname":"newname"}`
+	req := httptest.NewRequest("PUT", "/api/users/abc", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
+}
+
+func TestUpdate_IDLessThanOrEqualZero(t *testing.T) {
+	h := newTestHandler(t)
+
+	app := fiber.New()
+	app.Put("/api/users/:id", h.UserUpdate)
+
+	body := `{"nickname":"newname"}`
+	req := httptest.NewRequest("PUT", "/api/users/0", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
+}
+
+func TestUpdate_EmptyBody(t *testing.T) {
+	h := newTestHandler(t)
+
+	app := fiber.New()
+	app.Put("/api/users/:id", h.UserUpdate)
+
+	body := `{}`
+	req := httptest.NewRequest("PUT", "/api/users/1", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
+}
+
+func TestUpdate_InvalidEmail(t *testing.T) {
+	h := newTestHandler(t)
+
+	app := fiber.New()
+	app.Put("/api/users/:id", h.UserUpdate)
+
+	body := `{"email":"invalid-email"}`
+	req := httptest.NewRequest("PUT", "/api/users/1", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
+}
+
+func TestUpdate_PasswordTooShort(t *testing.T) {
+	h := newTestHandler(t)
+
+	app := fiber.New()
+	app.Put("/api/users/:id", h.UserUpdate)
+
+	body := `{"password":"123"}`
+	req := httptest.NewRequest("PUT", "/api/users/1", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
+}
+
+func TestUpdate_Success(t *testing.T) {
+	h := newTestHandler(t)
+
+	app := fiber.New()
+	app.Put("/api/users/:id", h.UserUpdate)
+
+	body := `{"nickname":"newname"}`
+	req := httptest.NewRequest("PUT", "/api/users/1", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+}
+
 func TestDelete_InvalidID(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
 	app.Delete("/api/users/:id", h.UserDelete)
 
-	// 无效的 id（非数字）
 	req := httptest.NewRequest("DELETE", "/api/users/abc", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
@@ -272,24 +352,22 @@ func TestDelete_IDLessThanOrEqualZero(t *testing.T) {
 	app := fiber.New()
 	app.Delete("/api/users/:id", h.UserDelete)
 
-	// id <= 0
 	req := httptest.NewRequest("DELETE", "/api/users/0", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
 	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
 }
 
-func TestGetByEmail_InvalidEmail(t *testing.T) {
+func TestDelete_Success(t *testing.T) {
 	h := newTestHandler(t)
 
 	app := fiber.New()
-	app.Get("/api/users/email/:email", h.UserGetByEmail)
+	app.Delete("/api/users/:id", h.UserDelete)
 
-	// 无效的 email 格式
-	req := httptest.NewRequest("GET", "/api/users/email/invalid-email", nil)
+	req := httptest.NewRequest("DELETE", "/api/users/1", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 }
 
 func TestList_PageZero(t *testing.T) {
@@ -298,7 +376,6 @@ func TestList_PageZero(t *testing.T) {
 	app := fiber.New()
 	app.Get("/api/users", h.UserList)
 
-	// page = 0 应该失败
 	req := httptest.NewRequest("GET", "/api/users?page=0", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
@@ -311,7 +388,6 @@ func TestList_PageSizeExceedsLimit(t *testing.T) {
 	app := fiber.New()
 	app.Get("/api/users", h.UserList)
 
-	// page_size = 101 应该失败
 	req := httptest.NewRequest("GET", "/api/users?page_size=101", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
@@ -324,11 +400,9 @@ func TestList_DefaultValues(t *testing.T) {
 	app := fiber.New()
 	app.Get("/api/users", h.UserList)
 
-	// 不传分页参数应该使用默认值
 	req := httptest.NewRequest("GET", "/api/users", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	// 应该成功返回 200
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 }
 
@@ -338,7 +412,6 @@ func TestList_ValidParams(t *testing.T) {
 	app := fiber.New()
 	app.Get("/api/users", h.UserList)
 
-	// 有效参数
 	req := httptest.NewRequest("GET", "/api/users?page=1&page_size=10", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)

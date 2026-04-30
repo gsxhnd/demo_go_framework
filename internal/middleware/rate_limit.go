@@ -48,7 +48,7 @@ type limiterEntry struct {
 }
 
 // rateLimiter 令牌桶限流器
-type rateLimiter struct {
+type RateLimiter struct {
 	mu              sync.RWMutex
 	entries         map[string]*limiterEntry
 	requestsPerSec  rate.Limit
@@ -59,9 +59,9 @@ type rateLimiter struct {
 	stopCleanup     chan struct{}
 }
 
-// newRateLimiter 创建限流器
-func newRateLimiter(cfg *RateLimitConfig) *rateLimiter {
-	rl := &rateLimiter{
+// NewRateLimiter 创建限流器
+func NewRateLimiter(cfg *RateLimitConfig) *RateLimiter {
+	rl := &RateLimiter{
 		entries:         make(map[string]*limiterEntry),
 		requestsPerSec:  rate.Limit(cfg.RequestsPerSecond),
 		burst:           cfg.Burst,
@@ -78,7 +78,7 @@ func newRateLimiter(cfg *RateLimitConfig) *rateLimiter {
 }
 
 // cleanupLoop 定期清理过期的 limiter 条目
-func (rl *rateLimiter) cleanupLoop() {
+func (rl *RateLimiter) cleanupLoop() {
 	ticker := time.NewTicker(rl.cleanupInterval)
 	defer ticker.Stop()
 
@@ -93,7 +93,7 @@ func (rl *rateLimiter) cleanupLoop() {
 }
 
 // cleanup 清理过期的条目
-func (rl *rateLimiter) cleanup() {
+func (rl *RateLimiter) cleanup() {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
@@ -106,12 +106,12 @@ func (rl *rateLimiter) cleanup() {
 }
 
 // Stop 停止限流器，清理后台协程
-func (rl *rateLimiter) Stop() {
+func (rl *RateLimiter) Stop() {
 	close(rl.stopCleanup)
 }
 
-// allow 检查是否允许请求
-func (rl *rateLimiter) allow(key string) bool {
+// Allow 检查是否允许请求
+func (rl *RateLimiter) Allow(key string) bool {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
@@ -133,9 +133,16 @@ func (rl *rateLimiter) allow(key string) bool {
 	return allowed
 }
 
+// EntryCount 返回当前条目数量（用于测试）
+func (rl *RateLimiter) EntryCount() int {
+	rl.mu.RLock()
+	defer rl.mu.RUnlock()
+	return len(rl.entries)
+}
+
 // RateLimit 返回限流中间件处理函数
 func RateLimit(cfg *RateLimitConfig) fiber.Handler {
-	rl := newRateLimiter(cfg)
+	rl := NewRateLimiter(cfg)
 
 	// 构建 skip paths 集合
 	skipPaths := make(map[string]bool)
@@ -183,7 +190,7 @@ func RateLimit(cfg *RateLimitConfig) fiber.Handler {
 		clientIP := ClientIP(c, cfg)
 
 		// 检查 IP 白名单
-		if isWhitelistedIP(clientIP, cfg, ipWhitelist) {
+		if IsWhitelistedIP(clientIP, cfg, ipWhitelist) {
 			return c.Next()
 		}
 
@@ -202,7 +209,7 @@ func RateLimit(cfg *RateLimitConfig) fiber.Handler {
 		}
 
 		// 检查是否允许
-		if rl.allow(key) {
+		if rl.Allow(key) {
 			return c.Next()
 		}
 
@@ -242,19 +249,19 @@ func ClientIP(c *fiber.Ctx, cfg *RateLimitConfig) string {
 	// 如果配置了可信代理，尝试从 Header 解析
 	if len(cfg.TrustedProxies) > 0 {
 		if isTrustedProxy(remoteAddr, cfg) {
-			ip := getIPFromHeader(c, cfg.IPHeader)
+			ip := GetIPFromHeader(c, cfg.IPHeader)
 			if ip != "" {
-				return normalizeIP(ip)
+				return NormalizeIP(ip)
 			}
 		}
 	}
 
 	// 直接使用 remote addr
-	return normalizeIP(remoteAddr)
+	return NormalizeIP(remoteAddr)
 }
 
-// getIPFromHeader 从指定 Header 提取 IP
-func getIPFromHeader(c *fiber.Ctx, header string) string {
+// GetIPFromHeader 从指定 Header 提取 IP
+func GetIPFromHeader(c *fiber.Ctx, header string) string {
 	// Fiber 提供了标准 header 的便捷方法
 	header = textproto.CanonicalMIMEHeaderKey(header)
 
@@ -285,8 +292,8 @@ func getIPFromHeader(c *fiber.Ctx, header string) string {
 	return ""
 }
 
-// normalizeIP 规范化 IP 地址
-func normalizeIP(raw string) string {
+// NormalizeIP 规范化 IP 地址
+func NormalizeIP(raw string) string {
 	ip := net.ParseIP(raw)
 	if ip == nil {
 		return raw
@@ -297,15 +304,15 @@ func normalizeIP(raw string) string {
 // isTrustedProxy 检查 IP 是否来自可信代理
 func isTrustedProxy(remoteIP string, cfg *RateLimitConfig) bool {
 	for _, cidr := range cfg.TrustedProxies {
-		if matchCIDR(remoteIP, cidr) {
+		if MatchCIDR(remoteIP, cidr) {
 			return true
 		}
 	}
 	return false
 }
 
-// isWhitelistedIP 检查 IP 是否在白名单中
-func isWhitelistedIP(ip string, cfg *RateLimitConfig, whitelist map[string]bool) bool {
+// IsWhitelistedIP 检查 IP 是否在白名单中
+func IsWhitelistedIP(ip string, cfg *RateLimitConfig, whitelist map[string]bool) bool {
 	// 检查直接匹配
 	if whitelist[ip] {
 		return true
@@ -313,7 +320,7 @@ func isWhitelistedIP(ip string, cfg *RateLimitConfig, whitelist map[string]bool)
 
 	// 检查 CIDR 匹配
 	for _, cidr := range cfg.IPWhitelist {
-		if matchCIDR(ip, cidr) {
+		if MatchCIDR(ip, cidr) {
 			return true
 		}
 	}
@@ -321,8 +328,8 @@ func isWhitelistedIP(ip string, cfg *RateLimitConfig, whitelist map[string]bool)
 	return false
 }
 
-// matchCIDR 检查 IP 是否匹配 CIDR
-func matchCIDR(ipStr, cidrStr string) bool {
+// MatchCIDR 检查 IP 是否匹配 CIDR
+func MatchCIDR(ipStr, cidrStr string) bool {
 	ip := net.ParseIP(ipStr)
 	if ip == nil {
 		return false
