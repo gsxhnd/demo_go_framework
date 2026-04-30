@@ -111,6 +111,8 @@ func NewLogger(cfg *LoggerConfig) (Logger, error) {
 		}
 		w := zapcore.AddSync(tr)
 		core = zapcore.NewCore(prodEncoder, w, level)
+	case "none":
+		core = zapcore.NewNopCore()
 	default:
 		core = zapcore.NewCore(devEncoder, os.Stdout, level)
 	}
