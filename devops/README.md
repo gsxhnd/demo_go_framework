@@ -1,8 +1,6 @@
-# =============================================================================
 # DevOps 文档
-# =============================================================================
-# Demo Go Framework 开发环境配置指南
-# =============================================================================
+
+Demo Go Framework 开发环境配置指南。所有配置已内置固定值，开箱即用，无需额外配置。
 
 ## 目录结构
 
@@ -10,79 +8,64 @@
 devops/
 ├── database/
 │   └── docker-compose.yml       # 数据库服务（MySQL, PostgreSQL, Redis）
-│
 ├── grafana.v1/
-│   ├── docker-compose.yml       # Grafana v1 监控栈（Prometheus, Grafana, Tempo, Loki, OTel）
+│   ├── docker-compose.yml       # Grafana v1 监控栈（Prometheus + Tempo + Loki + OTel）
 │   ├── grafana/
 │   │   ├── config.ini
-│   │   ├── provisioning/
-│   │   │   ├── datasources/datasources.yaml
-│   │   │   └── dashboards/dashboards.yaml
-│   │   └── dashboards/
-│   │       └── http-metrics.json
+│   │   ├── dashboards/http-metrics.json
+│   │   └── provisioning/
+│   ├── loki/config.yaml
+│   ├── otel-collector/config.yaml
 │   ├── prometheus/
 │   │   ├── config.yaml
 │   │   └── rules/alerts.yml
-│   ├── tempo/
-│   │   └── config.yaml
-│   ├── loki/
-│   │   └── config.yaml
-│   └── otel-collector/
-│       └── config.yaml
-│
+│   └── tempo/config.yaml
 ├── grafana.v2/
-│   ├── docker-compose.yml       # Grafana v2 监控栈（ClickHouse + Grafana OSS）
+│   ├── README.md                # Grafana v2 详细文档
 │   ├── clickhouse/
-│   │   └── init.sql             # ClickHouse 初始化脚本
-│   └── grafana/
-│       ├── config.ini
-│       └── provisioning/
-│           └── datasources/datasources.yaml
-│
-├── .env.example                 # 环境变量配置示例
-├── .env                         # 环境变量配置（从 .env.example 复制）
+│   │   ├── docker-compose.yml
+│   │   └── init.sql
+│   ├── grafana/
+│   │   ├── docker-compose.yml
+│   │   ├── config.ini
+│   │   ├── otel_dashboard.json
+│   │   └── provisioning/
+│   └── otel-collector/
+│       ├── config.yaml
+│       └── docker-compose.yml
 ├── config/
 │   └── config.template.yaml     # 应用配置模板
 ├── databases/
-│   ├── mysql/
-│   │   └── init.sql             # MySQL 初始化脚本
-│   └── postgres/
-│       └── init.sql             # PostgreSQL 初始化脚本
+│   ├── mysql/init.sql
+│   └── postgres/init.sql
 └── README.md
 ```
 
 ## 快速开始
 
-### 1. 环境准备
+> 所有服务端口和凭证已内置固定值，直接启动即可，无需复制 `.env` 文件。
 
-每个子目录下都有独立的 `.env.example`，首次使用时复制为 `.env`：
-
-```bash
-cp devops/database/.env.example devops/database/.env
-cp devops/grafana.v1/.env.example devops/grafana.v1/.env
-cp devops/grafana.v2/clickhouse/.env.example devops/grafana.v2/clickhouse/.env
-cp devops/grafana.v2/grafana/.env.example devops/grafana.v2/grafana/.env
-```
-
-### 2. 启动数据库
+### 1. 启动数据库
 
 ```bash
 cd devops/database
 docker compose up -d
 ```
 
-### 3. 启动 Grafana v1 监控栈
+### 2. 启动监控栈（二选一）
 
-Prometheus + Tempo + Loki + OTel Collector + Grafana 10.3.3
+`grafana.v1` 和 `grafana.v2` 是两套**不同的监控实现方案**，只需启动其中一套：
+
+**方案 A — Grafana v1**（Prometheus + Tempo + Loki + OTel Collector）
 
 ```bash
 cd devops/grafana.v1
 docker compose up -d
 ```
 
-### 4. 启动 Grafana v2 监控栈
+- Grafana: <http://localhost:3000（匿名> Admin 访问）
 
-ClickHouse + Grafana OSS 13.0.1
+**方案 B — Grafana v2**（ClickHouse + OTel Collector + Grafana OSS 13）
 
 ```bash
 # 先启动 ClickHouse
@@ -90,15 +73,20 @@ cd devops/grafana.v2/clickhouse
 docker compose up -d
 
 # 初始化 OTel 数据表（仅首次）
-docker exec -i ${COMPOSE_PROJECT_NAME:-demo}-clickhouse \
-  clickhouse-client --multiquery < init.sql
+docker exec -i demo-clickhouse clickhouse-client --multiquery < init.sql
 
-# 再启动 Grafana v2
+# 启动 OTel Collector
+cd devops/grafana.v2/otel-collector
+docker compose up -d
+
+# 启动 Grafana v2
 cd devops/grafana.v2/grafana
 docker compose up -d
 ```
 
-### 5. 停止服务
+- Grafana v2: <http://localhost:3000（匿名> Admin 访问）
+
+### 3. 停止服务
 
 ```bash
 # 停止数据库
@@ -109,57 +97,11 @@ cd devops/grafana.v1 && docker compose down
 
 # 停止 Grafana v2
 cd devops/grafana.v2/grafana && docker compose down
+cd devops/grafana.v2/otel-collector && docker compose down
 cd devops/grafana.v2/clickhouse && docker compose down
 
 # 停止并删除数据卷（加 -v 参数）
 docker compose down -v
-```
-
-### 2. 启动数据库
-
-```bash
-cd devops/database
-docker compose --env-file ../.env up -d
-
-# 查看服务状态
-docker compose --env-file ../.env ps
-```
-
-### 3. 启动 Grafana v1 监控栈
-
-Prometheus + Tempo + Loki + OTel Collector + Grafana 10.3.3
-
-```bash
-cd devops/grafana.v1
-docker compose --env-file ../.env up -d
-```
-
-### 4. 启动 Grafana v2 监控栈
-
-ClickHouse + Grafana OSS 13.0.1
-
-```bash
-cd devops/grafana.v2
-docker compose --env-file ../.env up -d
-```
-
-### 5. 停止服务
-
-```bash
-# 停止数据库
-cd devops/database
-docker compose --env-file ../.env down
-
-# 停止 Grafana v1
-cd devops/grafana.v1
-docker compose --env-file ../.env down
-
-# 停止 Grafana v2
-cd devops/grafana.v2
-docker compose --env-file ../.env down
-
-# 停止并删除数据卷（加 -v 参数）
-docker compose --env-file ../.env down -v
 ```
 
 ## 服务端口
@@ -170,148 +112,79 @@ docker compose --env-file ../.env down -v
 | MySQL | 3306 | MySQL 数据库 |
 | PostgreSQL | 5432 | PostgreSQL 数据库 |
 | Redis | 6379 | Redis 缓存 |
-| Grafana v1 | 3000 | 可视化看板（Prometheus 数据源） |
-| Grafana v2 | 3001 | 可视化看板（ClickHouse 数据源） |
-| Prometheus | 9090 | Metrics 存储 |
-| Tempo | 3200 | 分布式追踪 |
-| Loki | 3100 | 日志存储 |
-| OTel Collector | 4317/4318 | OTLP 接收 |
-| ClickHouse | 8123/9000 | 列式数据库（HTTP/TCP） |
+| Grafana (v1 / v2) | 3000 | 可视化看板（两者互斥，不冲突） |
+| Prometheus | 9090 | Metrics 存储（仅 v1） |
+| Tempo | 3200 | 分布式追踪（仅 v1） |
+| Loki | 3100 | 日志存储（仅 v1） |
+| OTel Collector | 4317/4318 | OTLP gRPC / HTTP 接收 |
+| OTel Collector metrics | 8888 | Collector 自身 metrics |
+| OTel Collector health | 13133 | Health check |
+| Prometheus scrape | 9464 | OTel Prometheus exporter（仅 v1） |
+| ClickHouse HTTP | 8123 | HTTP 查询接口（仅 v2） |
+| ClickHouse TCP | 9000 | Native TCP 接口（仅 v2） |
+
+> **注意**：grafana.v1 和 grafana.v2 共用端口（OTel: 4317/4318, Grafana: 3000），这是有意设计——两套方案只需启动其中一套，不会同时运行。
 
 ## 默认凭证
 
 ### Grafana (v1 & v2)
-- URL: http://localhost:3000 (v1) / http://localhost:3001 (v2)
-- 用户名: (匿名访问已启用)
-- 角色: Admin
+
+- URL: <http://localhost:3000>
+- 匿名访问已启用，角色为 Admin
+- 手动登录: `admin` / `admin`
 
 ### 数据库
-- MySQL: demo_user / demo_password
-- PostgreSQL: demo_user / demo_password
 
-## 配置说明
+- MySQL: `demo_user` / `demo_password`，库 `demo_db`
+- PostgreSQL: `demo_user` / `demo_password`，库 `demo_db`
 
-### 环境变量
+## 应用配置
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| COMPOSE_PROJECT_NAME | demo | 项目名称 |
-| MYSQL_PORT | 3306 | MySQL 端口 |
-| POSTGRES_PORT | 5432 | PostgreSQL 端口 |
-| REDIS_PORT | 6379 | Redis 端口 |
-| GRAFANA_PORT | 3000 | Grafana v1 端口 |
-| GRAFANA_V2_PORT | 3001 | Grafana v2 端口 |
-| PROMETHEUS_PORT | 9090 | Prometheus 端口 |
-| LOKI_PORT | 3100 | Loki 端口 |
-| TEMPO_API_PORT | 3200 | Tempo API 端口 |
-| CLICKHOUSE_HTTP_PORT | 8123 | ClickHouse HTTP 端口 |
-| CLICKHOUSE_TCP_PORT | 9000 | ClickHouse TCP 端口 |
+启动基础设施后，在 `config/config.local.yaml` 中配置应用连接信息（或直接使用默认值）：
 
-### 应用配置
-
-复制 `config/config.template.yaml` 为 `config/config.yaml` 并修改相应配置：
-
-```bash
-cp config/config.template.yaml config/config.yaml
+```yaml
+database:
+  relational:
+    driver: postgres  # 或 mysql
+    postgres:
+      host: localhost
+      port: 5432
+      user: demo_user
+      password: demo_password
+      dbname: demo_db
+    mysql:
+      host: localhost
+      port: 3306
+      user: demo_user
+      password: demo_password
+      dbname: demo_db
+  redis:
+    addr: localhost:6379
 ```
 
-## 数据源说明
+OTel 追踪配置（v1 和 v2 使用相同的 OTLP 端口）：
 
-### Grafana v1 数据源
+```yaml
+trace:
+  endpoint: localhost:4317
+```
 
-| 数据源 | 说明 |
-|--------|------|
-| Prometheus | 存储指标数据，被 Grafana 用于查询 metrics |
-| Tempo | 存储分布式追踪数据，支持 OTLP 协议 |
-| Loki | 存储日志数据，支持从日志中提取 trace_id 跳转到 Tempo |
+## 监控方案对比
 
-### Grafana v2 数据源
-
-| 数据源 | 说明 |
-|--------|------|
-| ClickHouse | 列式数据库，用于存储和查询大规模日志、指标数据 |
-
-### OpenTelemetry Collector
-- 统一接收应用的 traces、metrics、logs
-- 处理后转发到对应的后端存储
-- 提供健康检查端点
+| 维度 | Grafana v1 | Grafana v2 |
+|------|-----------|-----------|
+| 数据存储 | Prometheus + Tempo + Loki | ClickHouse 统一存储 |
+| 组件数量 | 5 个服务 | 3 个服务 |
+| Grafana 版本 | 10.3.3 | 13.0.1 (OSS) |
+| 数据源插件 | 内置 (Prometheus / Tempo / Loki) | grafana-clickhouse-datasource |
+| 适用场景 | 经典 Grafana 技术栈学习 | 列式存储方案学习 |
 
 ## 健康检查
 
-各服务健康检查端点：
-
 | 服务 | 端点 |
 |------|------|
-| Go App | http://localhost:8080/api/health |
-| OTel Collector | http://localhost:13133/health |
-| Prometheus | http://localhost:9090/-/healthy |
-| Grafana v1 | http://localhost:3000/api/health |
-| Grafana v2 | http://localhost:3001/api/health |
-| Tempo | http://localhost:3200/ready |
-| Loki | http://localhost:3100/ready |
-| ClickHouse | http://localhost:8123/ping |
-
-## 清理
-
-```bash
-# 停止数据库并删除数据卷
-cd devops/database && docker compose --env-file ../.env down -v
-
-# 停止 Grafana v1 并删除数据卷
-cd devops/grafana.v1 && docker compose --env-file ../.env down -v
-
-# 停止 Grafana v2 并删除数据卷
-cd devops/grafana.v2 && docker compose --env-file ../.env down -v
-
-# 删除所有未使用的镜像
-docker image prune -f
-
-# 完全清理（包括未使用的卷和网络）
-docker system prune -af --volumes
-```
-
-## 常见问题
-
-### Q: 服务启动失败怎么办？
-```bash
-# 查看详细日志（以数据库为例）
-cd devops/database
-docker compose --env-file ../.env logs [service-name]
-
-# 检查端口占用
-netstat -tlnp | grep [port]
-```
-
-### Q: 如何查看 OTel Collector 配置？
-```bash
-# 进入容器
-docker exec -it demo-otel-collector sh
-
-# 查看配置
-cat /etc/otel-collector-config.yaml
-```
-
-### Q: 如何重新加载 Prometheus 配置？
-```bash
-curl -X POST http://localhost:9090/-/reload
-```
-
-### Q: 如何重置 Grafana v1？
-```bash
-cd devops/grafana.v1
-docker compose --env-file ../.env down
-docker volume rm demo-grafana-data
-docker compose --env-file ../.env up -d
-```
-
-### Q: 如何重置 Grafana v2？
-```bash
-cd devops/grafana.v2
-docker compose --env-file ../.env down
-docker volume rm demo-grafana-v2-data
-docker compose --env-file ../.env up -d
-```
-
-### Q: Grafana v2 的 ClickHouse 插件安装失败？
-Grafana v2 通过 `GF_INSTALL_PLUGINS` 环境变量自动安装 `grafana-clickhouse-datasource` 插件。
-如果网络不通，可以手动下载插件并挂载到容器的 `/var/lib/grafana/plugins` 目录。
+| Go App | <http://localhost:8080/api/health> |
+| OTel Collector | <http://localhost:13133/health> |
+| Prometheus | <http://localhost:9090/-/healthy> |
+| Grafana | <http://localhost:3000/api/health> |
+| Tempo | <http://localhost:3200/ready> |

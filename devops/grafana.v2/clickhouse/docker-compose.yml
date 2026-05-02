@@ -8,11 +8,11 @@
 services:
   clickhouse:
     image: clickhouse/clickhouse-server:25.12-alpine
-    container_name: ${COMPOSE_PROJECT_NAME:-demo}-clickhouse
+    container_name: demo-clickhouse
     restart: unless-stopped
     ports:
-      - "${CLICKHOUSE_HTTP_PORT:-8123}:8123" # HTTP 接口
-      - "${CLICKHOUSE_TCP_PORT:-9000}:9000" # Native TCP 接口
+      - "8123:8123" # HTTP 接口
+      - "9000:9000" # Native TCP 接口
     environment:
       CLICKHOUSE_DB: demo
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
@@ -39,11 +39,11 @@ services:
 
 volumes:
   clickhouse-data:
-    name: ${COMPOSE_PROJECT_NAME:-demo}-clickhouse-data
+    name: demo-clickhouse-data
   clickhouse-logs:
-    name: ${COMPOSE_PROJECT_NAME:-demo}-clickhouse-logs
+    name: demo-clickhouse-logs
 
 networks:
   app-network:
     driver: bridge
-    name: ${COMPOSE_PROJECT_NAME:-demo}-network
+    name: demo-network

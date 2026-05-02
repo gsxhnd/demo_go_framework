@@ -8,11 +8,11 @@
 services:
   tempo:
     image: grafana/tempo:2.10.3
-    container_name: ${COMPOSE_PROJECT_NAME:-demo}-tempo
+    container_name: demo-tempo
     restart: unless-stopped
     ports:
-      - "${TEMPO_API_PORT:-3200}:3200"     # Tempo API
-    command: ["-config.file=/etc/tempo.yaml"]
+      - "3200:3200" # Tempo API
+    command: [ "-config.file=/etc/tempo.yaml" ]
     volumes:
       - ./tempo/config.yaml:/etc/tempo.yaml:ro
     networks:
@@ -20,11 +20,11 @@ services:
 
   loki:
     image: grafana/loki:3.6.10
-    container_name: ${COMPOSE_PROJECT_NAME:-demo}-loki
+    container_name: demo-loki
     restart: unless-stopped
     ports:
-      - "${LOKI_PORT:-3100}:3100"
-    command: ["-config.file=/etc/loki/local-config.yaml"]
+      - "3100:3100"
+    command: [ "-config.file=/etc/loki/local-config.yaml" ]
     volumes:
       - ./loki/config.yaml:/etc/loki/local-config.yaml:ro
     networks:
@@ -32,18 +32,18 @@ services:
 
   prometheus:
     image: prom/prometheus:v3.11.1
-    container_name: ${COMPOSE_PROJECT_NAME:-demo}-prometheus
+    container_name: demo-prometheus
     restart: unless-stopped
     ports:
-      - "${PROMETHEUS_PORT:-9090}:9090"
+      - "9090:9090"
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-lifecycle'
-      - '--storage.tsdb.retention.time=15d'
-      - '--storage.tsdb.max-block-duration=2h'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"
+      - "--storage.tsdb.retention.time=15d"
+      - "--storage.tsdb.max-block-duration=2h"
     volumes:
       - ./prometheus/config.yaml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/rules:/etc/prometheus/rules:ro
@@ -53,15 +53,15 @@ services:
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.149.0
-    container_name: ${COMPOSE_PROJECT_NAME:-demo}-otel-collector
+    container_name: demo-otel-collector
     restart: unless-stopped
     ports:
-      - "${OTEL_GRPC_PORT:-4317}:4317"    # OTLP gRPC
-      - "${OTEL_HTTP_PORT:-4318}:4318"    # OTLP HTTP
-      - "${OTEL_PROMETHEUS_PORT:-9464}:9464"  # Prometheus scrape
-      - "${OTEL_INTERNAL_METRICS_PORT:-8888}:8888"  # Collector metrics
-      - "${OTEL_HEALTH_PORT:-13133}:13133"  # Health check
-    command: ["--config=/etc/otel-collector-config.yaml"]
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+      - "9464:9464" # Prometheus scrape
+      - "8888:8888" # Collector metrics
+      - "13133:13133" # Health check
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
     volumes:
       - ./otel-collector/config.yaml:/etc/otel-collector-config.yaml:ro
     networks:
@@ -73,10 +73,10 @@ services:
 
   grafana:
     image: grafana/grafana:10.3.3
-    container_name: ${COMPOSE_PROJECT_NAME:-demo}-grafana
+    container_name: demo-grafana
     restart: unless-stopped
     ports:
-      - "${GRAFANA_PORT:-3000}:3000"
+      - "3000:3000"
     environment:
       GF_SECURITY_ALLOW_EMBEDDING: "true"
       GF_SECURITY_COOKIE_SECURE: "false"
@@ -98,22 +98,27 @@ services:
       - tempo
       - loki
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider
+            http://localhost:3000/api/health || exit 1",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
 
 volumes:
   tempo-data:
-    name: ${COMPOSE_PROJECT_NAME:-demo}-tempo-data
+    name: demo-tempo-data
   loki-data:
-    name: ${COMPOSE_PROJECT_NAME:-demo}-loki-data
+    name: demo-loki-data
   prometheus-data:
-    name: ${COMPOSE_PROJECT_NAME:-demo}-prometheus-data
+    name: demo-prometheus-data
   grafana-data:
-    name: ${COMPOSE_PROJECT_NAME:-demo}-grafana-data
+    name: demo-grafana-data
 
 networks:
   app-network:
     driver: bridge
-    name: ${COMPOSE_PROJECT_NAME:-demo}-network
+    name: demo-network

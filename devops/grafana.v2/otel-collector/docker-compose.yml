@@ -9,13 +9,13 @@
 services:
   otel-collector-v2:
     image: otel/opentelemetry-collector-contrib:0.149.0
-    container_name: ${COMPOSE_PROJECT_NAME:-demo}-otel-collector-v2
+    container_name: demo-otel-collector-v2
     restart: unless-stopped
     ports:
-      - "${OTEL_V2_GRPC_PORT:-4317}:4317" # OTLP gRPC
-      - "${OTEL_V2_HTTP_PORT:-4318}:4318" # OTLP HTTP
-      - "${OTEL_V2_INTERNAL_METRICS_PORT:-8888}:8888" # Collector 自身 metrics
-      - "${OTEL_V2_HEALTH_PORT:-13133}:13133" # Health check
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+      - "8888:8888" # Collector 自身 metrics
+      - "13133:13133" # Health check
     command: [ "--config=/etc/otel-collector-config.yaml" ]
     volumes:
       - ./config.yaml:/etc/otel-collector-config.yaml:ro
@@ -36,4 +36,4 @@ services:
 networks:
   app-network:
     driver: bridge
-    name: ${COMPOSE_PROJECT_NAME:-demo}-network
+    name: demo-network

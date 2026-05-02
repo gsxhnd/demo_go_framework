@@ -8,19 +8,13 @@ ClickHouse + OTel Collector + Grafana OSS，用于存储和可视化 OpenTelemet
 grafana.v2/
 ├── clickhouse/
 │   ├── docker-compose.yml        # ClickHouse 服务
-│   ├── init.sql                  # OTel 数据表 DDL（手动执行）
-│   ├── .env.example
-│   └── .env
+│   └── init.sql                  # OTel 数据表 DDL（手动执行）
 ├── otel-collector/
 │   ├── docker-compose.yml        # OTel Collector 服务
-│   ├── config.yaml               # Collector 配置（输出到 ClickHouse）
-│   ├── .env.example
-│   └── .env
+│   └── config.yaml               # Collector 配置（输出到 ClickHouse）
 └── grafana/
     ├── docker-compose.yml        # Grafana OSS 13.0.1
     ├── config.ini                # Grafana 全局配置
-    ├── .env.example
-    ├── .env
     └── provisioning/
         └── datasources/
             └── datasources.yaml  # ClickHouse 数据源
@@ -45,6 +39,8 @@ Grafana v2
 ```
 
 ## 快速开始
+
+> 所有配置已内置固定值，直接启动即可。
 
 ### 1. 启动 ClickHouse
 
@@ -95,7 +91,7 @@ cd grafana
 docker compose up -d
 ```
 
-访问 http://localhost:3001，ClickHouse 数据源已自动配置。
+访问 <http://localhost:3001，ClickHouse> 数据源已自动配置。
 
 ## 服务端口
 
@@ -103,13 +99,13 @@ docker compose up -d
 |------|------|------|
 | ClickHouse | 8123 | HTTP 接口（查询、健康检查） |
 | ClickHouse | 9000 | Native TCP 接口（clickhouse-client） |
-| OTel Collector | 4319 | OTLP gRPC 接收 |
-| OTel Collector | 4320 | OTLP HTTP 接收 |
-| OTel Collector | 8889 | Collector 自身 metrics |
-| OTel Collector | 13134 | Health check |
-| Grafana v2 | 3001 | Web UI |
+| OTel Collector | 4317 | OTLP gRPC 接收 |
+| OTel Collector | 4318 | OTLP HTTP 接收 |
+| OTel Collector | 8888 | Collector 自身 metrics |
+| OTel Collector | 13133 | Health check |
+| Grafana v2 | 3000 | Web UI |
 
-> 端口与 grafana.v1 的 OTel Collector（4317/4318/8888/13133）错开，两套可同时运行。
+> **注意**：grafana.v1 和 grafana.v2 共用 OTel 和 Grafana 端口。两套方案互斥运行，不会产生冲突。
 
 ## 数据表说明
 
@@ -127,13 +123,13 @@ docker compose up -d
 
 ## 应用接入
 
-将应用的 OTLP exporter 指向 OTel Collector v2 的端口：
+将应用的 OTLP exporter 指向 OTel Collector：
 
 ```yaml
 # config.yaml 示例
-otel:
-  endpoint: "http://localhost:4319"   # gRPC
-  # endpoint: "http://localhost:4320" # HTTP
+trace:
+  endpoint: localhost:4317   # gRPC
+  # endpoint: localhost:4318 # HTTP（备选）
 ```
 
 ## 停止服务
