@@ -14,8 +14,10 @@ import (
 	"go_sample_code/internal/middleware"
 	userrepo "go_sample_code/internal/repo/user"
 	userservice "go_sample_code/internal/service/user"
+	"go_sample_code/pkg/jwx"
 	"go_sample_code/pkg/logger"
 	"go_sample_code/pkg/metrics"
+	"go_sample_code/pkg/rbac"
 	"go_sample_code/pkg/trace"
 	"go_sample_code/pkg/validator"
 
@@ -43,6 +45,8 @@ func main() {
 			NewLoggerConfig,
 			NewTraceConfig,
 			NewMetricsConfig,
+			NewJwtConfig,
+			NewRBACConfig,
 			NewLogger,
 			newEntClients,
 			database.NewRedisClient,
@@ -53,6 +57,9 @@ func main() {
 			metrics.NewHTTPRecorder,
 			NewFiberApp,
 			NewValidator,
+			newJwtProvider,
+			newRBACService,
+			newABACService,
 			userrepo.NewUserRepo,
 			userservice.NewUserService,
 			healthhandler.NewHandler,
@@ -112,10 +119,24 @@ func NewFiberApp(cfg *AppConfig) *fiber.App {
 
 // NewValidator 创建全局 validator 实例
 func NewValidator() *validator.Validate {
-	// 注册 UpdateUserRequest 结构级校验：至少传一个可更新字段
 	v := validator.New()
 	return v
 }
+
+func newJwtProvider(cfg *AppConfig) jwx.JwtProvider {
+	return jwx.NewJwtProvider(&cfg.JWT)
+}
+
+func newRBACService(cfg *AppConfig, log logger.Logger) (rbac.RBACService, error) {
+	return rbac.NewRBACService(cfg.RBAC.RBAC, log)
+}
+
+func newABACService(cfg *AppConfig, log logger.Logger) (rbac.ABACService, error) {
+	return rbac.NewABACService(cfg.RBAC.ABAC, log)
+}
+
+var authSkipPaths = []string{"/api/health"}
+var rbacSkipPaths = []string{"/api/health"}
 
 func RegisterHooks(
 	lifecycle fx.Lifecycle,
@@ -126,20 +147,42 @@ func RegisterHooks(
 	redisClient *redis.Client,
 	healthChecker database.HealthChecker,
 	healthHandler healthhandler.Handler,
+	userHandler userhandler.Handler,
 	httpMetrics *metrics.HTTPRecorder,
 	meterProvider *metrics.MeterProvider,
 	tracerProvider *sdktrace.TracerProvider,
+	jwtProvider jwx.JwtProvider,
+	rbacService rbac.RBACService,
+	abacService rbac.ABACService,
 ) {
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			// Middleware 顺序: Recovery -> RateLimit -> Trace -> Metrics -> Logger
+			// Middleware 顺序: Recovery -> RateLimit -> Trace -> Metrics -> Logger -> Auth -> RBAC
 			app.Use(middleware.Recovery(log))
 			app.Use(middleware.RateLimit(middleware.DefaultRateLimitConfig(log)))
 			app.Use(middleware.Trace(tracerProvider))
 			app.Use(middleware.Metrics(httpMetrics))
 			app.Use(middleware.Logger(log))
+			app.Use(middleware.AuthWithSkipPaths(jwtProvider, log, authSkipPaths))
+			app.Use(middleware.RBACWithConfig(&middleware.RBACConfig{
+				RBACService: rbacService,
+				ABACService: abacService,
+				Log:         log,
+				SkipPaths:   rbacSkipPaths,
+				EnableABAC:  true,
+			}))
 
+			// 健康检查
 			app.Get("/api/health", healthHandler.Check)
+
+			// 用户管理路由
+			app.Post("/api/users", userHandler.UserCreate)
+			app.Get("/api/users/username/:username", userHandler.UserGetByUsername)
+			app.Get("/api/users/email/:email", userHandler.UserGetByEmail)
+			app.Get("/api/users", userHandler.UserList)
+			app.Get("/api/users/:id", userHandler.UserGetByID)
+			app.Put("/api/users/:id", userHandler.UserUpdate)
+			app.Delete("/api/users/:id", userHandler.UserDelete)
 
 			go func() {
 				if err := app.Listen(":8080"); err != nil {

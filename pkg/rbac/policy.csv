@@ -8,15 +8,19 @@
 # 管理员角色 - 拥有所有权限
 p, admin, /*, *
 
-# 普通用户角色
-p, user, /api/v1/users, read
-p, user, /api/v1/users/:id, read
-p, user, /api/v1/profile, read
-p, user, /api/v1/profile, update
+# 普通用户角色 - 用户管理读权限
+p, user, /api/users, read
+p, user, /api/users/:id, read
+p, user, /api/users/username/:username, read
+p, user, /api/users/email/:email, read
 
-# 访客角色 - 只读权限
-p, guest, /api/v1/public, read
-p, guest, /api/v1/health, read
+# 普通用户角色 - 用户管理写权限
+p, user, /api/users, create
+p, user, /api/users/:id, update
+p, user, /api/users/:id, delete
+
+# 访客角色 - 只读健康检查
+p, guest, /api/health, read
 
 # 角色继承关系
 # g, user_id, role_name

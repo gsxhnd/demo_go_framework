@@ -5,8 +5,10 @@ import (
 	"os"
 
 	"go_sample_code/internal/database"
+	"go_sample_code/pkg/jwx"
 	"go_sample_code/pkg/logger"
 	"go_sample_code/pkg/metrics"
+	"go_sample_code/pkg/rbac"
 	"go_sample_code/pkg/trace"
 
 	"go.uber.org/fx"
@@ -27,6 +29,8 @@ type AppConfig struct {
 	Logger   logger.LoggerConfig     `yaml:"logger"`
 	Trace    trace.TraceConfig       `yaml:"trace"`
 	Metrics  metrics.MetricsConfig   `yaml:"metrics"`
+	JWT      jwx.JwtConfig           `yaml:"jwt"`
+	RBAC     rbac.Config             `yaml:",inline"`
 }
 
 // ApplyDefaults 应用默认值
@@ -66,6 +70,16 @@ func (c *AppConfig) ApplyDefaults() {
 
 	// Metrics defaults
 	c.Metrics.ApplyDefaults()
+
+	// JWT defaults
+	if c.JWT.TokenSecret == "" {
+		c.JWT.TokenSecret = "default-secret-key-change-in-production"
+	}
+
+	// RBAC defaults
+	if !c.RBAC.RBAC.Enabled && c.RBAC.RBAC.ModelPath == "" && c.RBAC.RBAC.PolicyPath == "" {
+		c.RBAC = *rbac.DefaultConfig()
+	}
 }
 
 // Validate 验证配置
@@ -83,6 +97,16 @@ func (c *AppConfig) Validate() error {
 	// Validate metrics
 	if err := c.Metrics.Validate(); err != nil {
 		return fmt.Errorf("metrics config error: %w", err)
+	}
+
+	// Validate JWT
+	if c.JWT.TokenSecret == "" {
+		return fmt.Errorf("jwt: token_secret is required")
+	}
+
+	// Validate RBAC
+	if err := c.RBAC.Validate(); err != nil {
+		return fmt.Errorf("rbac config error: %w", err)
 	}
 
 	return nil
@@ -170,4 +194,14 @@ func NewTraceConfig(cfg *AppConfig) *trace.TraceConfig {
 // NewMetricsConfig 从 AppConfig 提取 metrics 配置
 func NewMetricsConfig(cfg *AppConfig) *metrics.MetricsConfig {
 	return &cfg.Metrics
+}
+
+// NewJwtConfig 从 AppConfig 提取 JWT 配置
+func NewJwtConfig(cfg *AppConfig) *jwx.JwtConfig {
+	return &cfg.JWT
+}
+
+// NewRBACConfig 从 AppConfig 提取 RBAC 配置
+func NewRBACConfig(cfg *AppConfig) *rbac.Config {
+	return &cfg.RBAC
 }
