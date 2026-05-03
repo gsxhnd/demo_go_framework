@@ -7,8 +7,16 @@ import (
 	"go.uber.org/zap"
 )
 
-// UserGetByUsername 根据用户名获取用户
-// GET /api/users/username/:username
+// @Summary      根据用户名获取用户
+// @Description  根据用户名获取用户详情
+// @Tags         用户管理
+// @Accept       json
+// @Produce      json
+// @Param        username  path      string                true  "用户名"
+// @Success      200       {object}  SwaggerUserResponse   "获取成功"
+// @Failure      400       {object}  SwaggerErrorResponse  "参数校验失败"
+// @Failure      404       {object}  SwaggerErrorResponse  "用户不存在"
+// @Router       /users/username/{username} [get]
 func (h *handler) UserGetByUsername(c *fiber.Ctx) error {
 	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.UserGetByUsername")
 	defer span.End()

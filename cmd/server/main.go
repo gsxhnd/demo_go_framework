@@ -1,3 +1,13 @@
+// @title           Go Fiber API Demo
+// @version         1.0.0
+// @description     用户管理 CRUD 示例 API，演示 Go + Fiber + Ent + fx 分层架构
+// @termsOfService  http://swagger.io/terms/
+// @contact.name    API Support
+// @contact.email   support@example.com
+// @license.name    MIT
+// @license.url     https://opensource.org/licenses/MIT
+// @host            localhost:8080
+// @BasePath        /api
 package main
 
 import (

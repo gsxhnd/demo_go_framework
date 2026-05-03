@@ -8,6 +8,14 @@ import (
 	"go.uber.org/zap"
 )
 
+// @Summary      健康检查
+// @Description  检查数据库和 Redis 连接状态
+// @Tags         健康检查
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  SwaggerHealthResponse  "服务正常"
+// @Failure      503  {object}  SwaggerHealthResponse  "服务不可用"
+// @Router       /health [get]
 func (h *handler) Check(c *fiber.Ctx) error {
 	ctx, span := h.tracer.Start(c.UserContext(), "health_heandler.check")
 	defer span.End()

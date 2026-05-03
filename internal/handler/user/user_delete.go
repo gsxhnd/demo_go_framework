@@ -8,8 +8,16 @@ import (
 	"go.uber.org/zap"
 )
 
-// UserDelete 删除用户
-// DELETE /api/users/:id
+// @Summary      删除用户
+// @Description  根据用户 ID 删除用户
+// @Tags         用户管理
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int                    true  "用户 ID"
+// @Success      200  {object}  SwaggerDeleteResponse  "删除成功"
+// @Failure      400  {object}  SwaggerErrorResponse   "参数校验失败"
+// @Failure      404  {object}  SwaggerErrorResponse   "用户不存在"
+// @Router       /users/{id} [delete]
 func (h *handler) UserDelete(c *fiber.Ctx) error {
 	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.UserDelete")
 	defer span.End()

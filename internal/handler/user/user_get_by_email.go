@@ -7,8 +7,16 @@ import (
 	"go.uber.org/zap"
 )
 
-// UserGetByEmail 根据邮箱获取用户
-// GET /api/users/email/:email
+// @Summary      根据邮箱获取用户
+// @Description  根据邮箱地址获取用户详情
+// @Tags         用户管理
+// @Accept       json
+// @Produce      json
+// @Param        email  path      string                true  "邮箱地址"
+// @Success      200    {object}  SwaggerUserResponse   "获取成功"
+// @Failure      400    {object}  SwaggerErrorResponse  "参数校验失败"
+// @Failure      404    {object}  SwaggerErrorResponse  "用户不存在"
+// @Router       /users/email/{email} [get]
 func (h *handler) UserGetByEmail(c *fiber.Ctx) error {
 	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.UserGetByEmail")
 	defer span.End()

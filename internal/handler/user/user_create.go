@@ -19,8 +19,16 @@ type CreateUserRequest struct {
 	IsActive *bool  `json:"is_active,omitempty"`
 }
 
-// UserCreate 创建用户
-// POST /api/users
+// @Summary      创建用户
+// @Description  创建一个新用户
+// @Tags         用户管理
+// @Accept       json
+// @Produce      json
+// @Param        request  body      CreateUserRequest     true  "用户信息"
+// @Success      201      {object}  SwaggerUserResponse   "创建成功"
+// @Failure      400      {object}  SwaggerErrorResponse  "参数校验失败"
+// @Failure      500      {object}  SwaggerErrorResponse  "服务器内部错误"
+// @Router       /users [post]
 func (h *handler) UserCreate(c *fiber.Ctx) error {
 	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.UserCreate")
 	defer span.End()

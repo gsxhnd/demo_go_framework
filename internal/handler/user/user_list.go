@@ -15,8 +15,17 @@ type ListUsersRequest struct {
 	Keyword  string `query:"keyword" validate:"max=128"`
 }
 
-// UserList 分页获取用户列表
-// GET /api/users?page=1&page_size=10&keyword=xxx
+// @Summary      分页获取用户列表
+// @Description  分页查询用户列表，支持关键词搜索
+// @Tags         用户管理
+// @Accept       json
+// @Produce      json
+// @Param        page       query     int                     false  "页码"       default(1)
+// @Param        page_size  query     int                     false  "每页数量"    default(10)
+// @Param        keyword    query     string                  false  "搜索关键词"
+// @Success      200        {object}  SwaggerUserListResponse "查询成功"
+// @Failure      400        {object}  SwaggerErrorResponse    "参数校验失败"
+// @Router       /users [get]
 func (h *handler) UserList(c *fiber.Ctx) error {
 	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.UserList")
 	defer span.End()

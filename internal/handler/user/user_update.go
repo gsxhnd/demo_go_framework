@@ -19,8 +19,17 @@ type UpdateUserRequest struct {
 	IsActive *bool   `json:"is_active,omitempty"`
 }
 
-// UserUpdate 更新用户
-// PUT /api/users/:id
+// @Summary      更新用户
+// @Description  根据用户 ID 更新用户信息
+// @Tags         用户管理
+// @Accept       json
+// @Produce      json
+// @Param        id       path      int                   true  "用户 ID"
+// @Param        request  body      UpdateUserRequest     true  "更新内容"
+// @Success      200      {object}  SwaggerUserResponse   "更新成功"
+// @Failure      400      {object}  SwaggerErrorResponse  "参数校验失败"
+// @Failure      404      {object}  SwaggerErrorResponse  "用户不存在"
+// @Router       /users/{id} [put]
 func (h *handler) UserUpdate(c *fiber.Ctx) error {
 	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.UserUpdate")
 	defer span.End()

@@ -239,6 +239,18 @@ go test -v ./internal/handler/...
 
 测试策略：所有测试均为**单元测试**，无需数据库/Redis。通过 mock 下层接口来隔离测试目标层。
 
+### API 文档 (Swagger)
+
+```bash
+# 生成 Swagger API 文档
+swag init -d ./cmd/server -g main.go --outputTypes json --pdl 3
+```
+
+```bash
+# 安装 swag CLI（如未安装）
+go install github.com/swaggo/swag/cmd/swag@latest
+```
+
 ## 📚 延伸学习
 
 在理解本 Demo 的基础上，建议进一步探索：
