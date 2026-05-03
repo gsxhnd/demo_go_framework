@@ -26,7 +26,14 @@ func (h *handler) UserCreate(c *fiber.Ctx) error {
 	defer span.End()
 
 	var req CreateUserRequest
-	if h.parseAndValidateBody(c, &req) {
+	if err := c.BodyParser(&req); err != nil {
+		h.log.ErrorCtx(ctx, "failed to parse request body", zap.Error(err))
+		_ = c.Status(errno.RequestParserError.GetHTTPStatus()).JSON(errno.Decode(nil, errno.RequestParserError))
+		return nil
+	}
+	if err := h.validate.Struct(req); err != nil {
+		h.log.WarnCtx(ctx, "request validation failed", zap.Error(err))
+		_ = c.Status(errno.RequestValidateError.GetHTTPStatus()).JSON(errno.Decode(nil, errno.RequestValidateError))
 		return nil
 	}
 

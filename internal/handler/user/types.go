@@ -1,10 +1,5 @@
 package user
 
-// UserIDParams 路径参数：用户 ID
-type UserIDParams struct {
-	ID int `params:"id" validate:"required,gt=0"`
-}
-
 // UserResponse 用户响应
 type UserResponse struct {
 	ID        int    `json:"id"`

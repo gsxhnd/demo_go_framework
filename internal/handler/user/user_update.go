@@ -3,6 +3,7 @@ package user
 import (
 	"go_sample_code/internal/errno"
 	userrepo "go_sample_code/internal/repo/user"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
@@ -24,13 +25,23 @@ func (h *handler) UserUpdate(c *fiber.Ctx) error {
 	ctx, span := h.tracer.Start(c.UserContext(), "UserHandler.UserUpdate")
 	defer span.End()
 
-	var idParams UserIDParams
-	if h.parseAndValidateParams(c, &idParams) {
+	idStr := c.Params("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id <= 0 {
+		h.log.WarnCtx(ctx, "invalid id param", zap.String("id", idStr))
+		_ = c.Status(errno.RequestValidateError.GetHTTPStatus()).JSON(errno.Decode(nil, errno.RequestValidateError))
 		return nil
 	}
 
 	var req UpdateUserRequest
-	if h.parseAndValidateBody(c, &req) {
+	if err := c.BodyParser(&req); err != nil {
+		h.log.ErrorCtx(ctx, "failed to parse request body", zap.Error(err))
+		_ = c.Status(errno.RequestParserError.GetHTTPStatus()).JSON(errno.Decode(nil, errno.RequestParserError))
+		return nil
+	}
+	if err := h.validate.Struct(req); err != nil {
+		h.log.WarnCtx(ctx, "request validation failed", zap.Error(err))
+		_ = c.Status(errno.RequestValidateError.GetHTTPStatus()).JSON(errno.Decode(nil, errno.RequestValidateError))
 		return nil
 	}
 
@@ -43,9 +54,9 @@ func (h *handler) UserUpdate(c *fiber.Ctx) error {
 		IsActive: req.IsActive,
 	}
 
-	result, errNo := h.userService.UpdateUser(ctx, idParams.ID, repoReq)
+	result, errNo := h.userService.UpdateUser(ctx, id, repoReq)
 	if errNo.GetCode() != errno.OK.Code {
-		h.log.ErrorCtx(ctx, "failed to update user", zap.Int("id", idParams.ID), zap.Int("code", errNo.GetCode()))
+		h.log.ErrorCtx(ctx, "failed to update user", zap.Int("id", id), zap.Int("code", errNo.GetCode()))
 		return c.Status(errNo.GetHTTPStatus()).JSON(errno.Decode(nil, errNo))
 	}
 
