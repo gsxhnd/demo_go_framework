@@ -1,15 +1,13 @@
 # =============================================================================
-# Grafana 数据源配置文件
+# Grafana 数据源 — v1 / v2 / v3 后端（同一 Docker 网络 demo-network）
 # =============================================================================
-# 用途：自动配置 Grafana 数据源（Prometheus、Tempo、Loki）
+# 说明：各数据源依赖对应 Compose 栈已加入网络 demo-network（容器名可解析）。
+# 未启动的后端在 Explore 中会失败，属正常。
 # =============================================================================
 
 apiVersion: 1
 
 datasources:
-  # --------------------------------------------------------------------------
-  # Prometheus 数据源 - Metrics 查询
-  # --------------------------------------------------------------------------
   - name: Prometheus
     type: prometheus
     uid: prometheus
@@ -20,15 +18,12 @@ datasources:
     jsonData:
       prometheusType: Prometheus
       httpMethod: POST
-      cacheLevel: 'High'
+      cacheLevel: "High"
       rangeVectorDuration: 60s
       httpMethodDetails:
         codeMetricsLimit: 5000
     version: 1
 
-  # --------------------------------------------------------------------------
-  # Grafana Tempo 数据源 - 分布式追踪
-  # --------------------------------------------------------------------------
   - name: Tempo
     type: tempo
     uid: tempo
@@ -43,14 +38,11 @@ datasources:
       lokiSearch:
         enabled: true
       serviceMap:
-        datasourceUid: 'prometheus'
+        datasourceUid: "prometheus"
       tempoQuery:
         type: influx
     version: 1
 
-  # --------------------------------------------------------------------------
-  # Loki 数据源 - 日志查询
-  # --------------------------------------------------------------------------
   - name: Loki
     type: loki
     uid: loki
@@ -62,15 +54,15 @@ datasources:
         - matcherRegex: '"trace_id":"([a-f0-9]+)"'
           name: TraceID
           datasourceUid: tempo
-          url: '$${__value.raw}'
+          url: "$${__value.raw}"
         - matcherRegex: '"span_id":"([a-f0-9]+)"'
           name: SpanID
           datasourceUid: tempo
-          url: '$${__value.raw}'
-        - matcherRegex: 'trace_id=([a-f0-9]+)'
+          url: "$${__value.raw}"
+        - matcherRegex: "trace_id=([a-f0-9]+)"
           name: TraceID
           datasourceUid: tempo
-          url: '$${__value.raw}'
+          url: "$${__value.raw}"
       enableLogDetails: true
       labelFieldsList:
         - service_name
@@ -80,4 +72,36 @@ datasources:
         - span_id
         - method
         - route
+    version: 1
+
+  - name: ClickHouse
+    type: grafana-clickhouse-datasource
+    uid: clickhouse
+    access: proxy
+    url: http://clickhouse:8123
+    isDefault: false
+    editable: false
+    jsonData:
+      host: clickhouse
+      port: 9000
+      protocol: native
+      defaultDatabase: otel
+      tlsSkipVerify: true
+    version: 1
+
+  # monitor.v3.influxdb — OTel -> InfluxDB 2（metrics / traces / logs）
+  - name: InfluxDB (OTel v3)
+    type: influxdb
+    uid: influxdb_otel_v3
+    access: proxy
+    url: http://influxdb:8086
+    isDefault: false
+    editable: false
+    jsonData:
+      version: Flux
+      organization: demo
+      defaultBucket: otel
+      httpMode: POST
+    secureJsonData:
+      token: demo_influx_admin_token_for_local_dev_only_12345
     version: 1

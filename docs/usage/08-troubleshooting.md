@@ -102,10 +102,11 @@ kill -9 <PID>
 
 ```bash
 # 检查可观测性栈是否已启动
-docker compose -f devops/grafana.v1/docker-compose.yml ps
+docker compose -f devops/monitor.grafana.panel/docker-compose.yml ps
 
-# 如未启动，启动服务
-docker compose -f devops/grafana.v1/docker-compose.yml up -d
+# 如未启动，启动 Grafana 面板及（按需）v1 后端
+docker compose -f devops/monitor.grafana.panel/docker-compose.yml up -d
+docker compose -f devops/monitor.v1.grafana/docker-compose.yml up -d
 ```
 
 ### 无 Trace 数据

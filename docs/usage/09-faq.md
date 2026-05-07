@@ -70,8 +70,8 @@ A: 项目未内置 Kubernetes 配置，但可作为标准 Go 应用部署到 K8s
 
 A: 两个版本：
 
-- `grafana.v1`：Grafana + Prometheus + Tempo + Loki + OTel Collector
-- `grafana.v2`：Grafana + ClickHouse + OTel Collector（更高性能）
+- `monitor.v1.grafana`：Prometheus + Tempo + Loki + OTel Collector（Grafana 见 `monitor.grafana.panel`）
+- `monitor.v2.clickhouse`：ClickHouse + OTel Collector（Grafana 同上）
 
 ### Q: 如何查看请求链路？
 

@@ -1,15 +1,14 @@
 # =============================================================================
-# Docker Compose 配置 - Grafana v2
+# Docker Compose — Grafana 面板（v1 Prometheus/Tempo/Loki + v2 ClickHouse）
 # =============================================================================
-# 用途：单独启动 Grafana OSS 13.0.1（ClickHouse 数据源）
-# 启动命令：docker compose up -d
-# 依赖：需要先启动 clickhouse/docker-compose.yml
+# 依赖：后端栈使用同名网络 demo-network（与 monitor.v1.grafana / monitor.v2.clickhouse 一致）
+# 启动：在本目录执行 docker compose up -d
 # =============================================================================
 
 services:
-  grafana-v2:
+  grafana:
     image: grafana/grafana-oss:13.0.1
-    container_name: demo-grafana-v2
+    container_name: demo-grafana
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -25,25 +24,25 @@ services:
       GF_PATHS_PLUGINS: /var/lib/grafana/plugins
       GF_INSTALL_PLUGINS: grafana-clickhouse-datasource
     volumes:
-      - ./config.ini:/etc/grafana/grafana.ini:ro
-      - ./provisioning:/etc/grafana/provisioning:ro
-      - grafana-v2-data:/var/lib/grafana
+      - ./grafana/config.ini:/etc/grafana/grafana.ini:ro
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-panel-data:/var/lib/grafana
     networks:
       - app-network
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider
-            http://localhost:3000/api/health || exit 1",
+          "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1",
         ]
       interval: 30s
       timeout: 10s
       retries: 3
 
 volumes:
-  grafana-v2-data:
-    name: demo-grafana-v2-data
+  grafana-panel-data:
+    name: demo-grafana-panel-data
 
 networks:
   app-network:

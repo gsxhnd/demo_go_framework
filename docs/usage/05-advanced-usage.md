@@ -9,11 +9,12 @@
 ### 启动可观测性栈
 
 ```bash
-# 基础版
-docker compose -f devops/grafana.v1/docker-compose.yml up -d
+# 基础版（LGTM 后端 + Grafana 面板）
+docker compose -f devops/monitor.v1.grafana/docker-compose.yml up -d
+docker compose -f devops/monitor.grafana.panel/docker-compose.yml up -d
 
-# ClickHouse 版（更高性能）
-docker compose -f devops/grafana.v2/docker-compose.yml up -d
+# ClickHouse 版：先按 devops/monitor.v2.clickhouse/README.md 启动后端，再启动面板
+docker compose -f devops/monitor.grafana.panel/docker-compose.yml up -d
 ```
 
 启动后可访问：
@@ -22,7 +23,7 @@ docker compose -f devops/grafana.v2/docker-compose.yml up -d
 |------|------|------|
 | Grafana | <http://localhost:3000> | 仪表盘和可视化 |
 | Prometheus | <http://localhost:9090> | 指标查询 |
-| Tempo | <http://localhost:3100> | 链路追踪查询 |
+| Tempo | <http://localhost:3200> | 链路追踪查询 |
 | Loki | <http://localhost:3100> | 日志查询 |
 
 ### 链路追踪

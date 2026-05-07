@@ -29,9 +29,10 @@ go_sample_code/
 │   └── server/         # 服务入口
 ├── config/             # 配置文件
 ├── devops/             # Docker 编排 & 监控套件（开箱即用）
-│   ├── database/       # 数据库 + Redis
-│   ├── grafana.v1/     # 经典监控栈（Prometheus / Tempo / Loki）
-│   └── grafana.v2/     # 现代监控栈（ClickHouse + Grafana OSS）
+│   ├── database/              # 数据库 + Redis
+│   ├── monitor.v1.grafana/    # LGTM 后端（Prometheus / Tempo / Loki + OTel）
+│   ├── monitor.v2.clickhouse/ # ClickHouse + OTel
+│   └── monitor.grafana.panel/ # Grafana 统一面板（v1+v2 数据源）
 ├── internal/
 │   ├── database/       # 数据库配置 (MySQL/PostgreSQL/Redis)
 │   ├── ent/            # Ent ORM 代码生成
@@ -82,11 +83,11 @@ go_sample_code/
 # 启动 PostgreSQL + Redis（MySQL 可选）
 docker compose -f devops/database/docker-compose.yml up -d
 
-# （可选）启动可观测性套件 — 二选一：
-# 方案 A: 经典 Grafana 栈（Prometheus + Tempo + Loki）
-docker compose -f devops/grafana.v1/docker-compose.yml up -d
-# 方案 B: ClickHouse 方案（现代化列式存储）
-# 详见 devops/grafana.v2/README.md
+# （可选）监控：先启动后端（二选一），再启动 Grafana 面板
+docker compose -f devops/monitor.v1.grafana/docker-compose.yml up -d
+# 或: devops/monitor.v2.clickhouse/ 下 clickhouse + otel-collector
+docker compose -f devops/monitor.grafana.panel/docker-compose.yml up -d
+# 详见 devops/README.md
 ```
 
 ### 2. 配置文件
@@ -257,7 +258,7 @@ go install github.com/swaggo/swag/cmd/swag@latest
 
 - 接入 Auth + RBAC 中间件，实现认证与授权
 - 添加更多业务实体（如订单、商品），练习复杂关联查询
-- 切换并对比两套监控方案：`grafana.v1`（经典 LGTM 栈）vs `grafana.v2`（ClickHouse）
+- 切换并对比两套监控方案：`monitor.v1.grafana`（经典 LGTM 栈）与 `monitor.v2.clickhouse`（ClickHouse）
 - 在 Grafana 中构建自定义 Dashboard，可视化链路追踪和性能指标
 - 编写集成测试，覆盖完整的请求-响应链路
 - 尝试替换 Fiber 为 `net/http` + `chi` 路由，对比框架差异

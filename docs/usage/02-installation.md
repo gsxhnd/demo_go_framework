@@ -98,11 +98,11 @@ docker compose -f devops/database/docker-compose.yml up -d
 ### 可观测性栈（可选）
 
 ```bash
-# 基础版（Grafana + Prometheus + Tempo + Loki）
-docker compose -f devops/grafana.v1/docker-compose.yml up -d
+# 基础版（Prometheus + Tempo + Loki + OTel，再加 Grafana 面板）
+docker compose -f devops/monitor.v1.grafana/docker-compose.yml up -d
+docker compose -f devops/monitor.grafana.panel/docker-compose.yml up -d
 
-# ClickHouse 版
-docker compose -f devops/grafana.v2/docker-compose.yml up -d
+# ClickHouse 版：见 devops/monitor.v2.clickhouse/README.md（ClickHouse + OTel + 同上 Grafana 面板）
 ```
 
 ## 安装验证

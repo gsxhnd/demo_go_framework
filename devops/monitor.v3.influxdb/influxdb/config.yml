@@ -1,0 +1,8 @@
+# 供官方 Docker entrypoint：influxdb:2.9 镜像里默认 config 过简，entrypoint 用 dasel
+# 读写 tls-cert / http-bind-address 等键；缺失会导致 init 失败并触发 cleanup（删 bolt）。
+bolt-path: /var/lib/influxdb2/influxd.bolt
+engine-path: /var/lib/influxdb2/engine
+http-bind-address: :8086
+tls-cert: ""
+tls-key: ""
+log-level: info

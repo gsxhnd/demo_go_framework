@@ -1,0 +1,67 @@
+# =============================================================================
+# Docker Compose — monitor.v3.influxdb（InfluxDB 2 + OTel Collector）
+# =============================================================================
+# 用途：OTLP 指标/追踪/日志统一写入 InfluxDB；Grafana 见 monitor.grafana.panel
+# 启动：在本目录执行 docker compose up -d
+# OTLP：主机映射 4319/4320，避免与 v1/v2 Collector 的 4317/4318 冲突
+# InfluxDB 2.9：镜像默认 config 不含 entrypoint 所需的 http-bind-address / tls-*，
+# 需挂载 ./influxdb/config.yml 至 /etc/influxdb2/config.yml（勿加 :ro，entrypoint 会 chown）
+# =============================================================================
+
+services:
+  influxdb:
+    image: influxdb:2.9
+    container_name: demo-influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: demo_password_change_me
+      DOCKER_INFLUXDB_INIT_ORG: demo
+      DOCKER_INFLUXDB_INIT_BUCKET: otel
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: demo_influx_admin_token_for_local_dev_only_12345
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - ./influxdb/config.yml:/etc/influxdb2/config.yml
+    networks:
+      - app-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf http://127.0.0.1:8086/ready >/dev/null || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.149.0
+    container_name: demo-otel-collector-v3
+    restart: unless-stopped
+    ports:
+      - "4317:4317" # OTLP gRPC（主机 4319）
+      - "4318:4318" # OTLP HTTP（主机 4320）
+      - "8888:8888" # Collector 自身 metrics（避免与 v1/v2 的 8888 冲突）
+      - "13133:13133" # Health check
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    volumes:
+      - ./otel-collector/config.yaml:/etc/otel-collector-config.yaml:ro
+    networks:
+      - app-network
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    # 无 healthcheck：otelcol-contrib 为 distroless，无 /bin/sh，CMD-SHELL 会永久 unhealthy
+
+volumes:
+  influxdb-data:
+    name: demo-influxdb-data
+
+networks:
+  app-network:
+    driver: bridge
+    name: demo-network

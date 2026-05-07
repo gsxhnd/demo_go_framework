@@ -55,8 +55,9 @@ devops/                     — Docker Compose configs per subdirectory
 
 ```bash
 docker compose -f devops/database/docker-compose.yml up -d
-# Optional: full observability (Grafana, Prometheus, Tempo, Loki, OTel)
-docker compose -f devops/grafana.v1/docker-compose.yml up -d
+# Optional: LGTM backends + Grafana panel (see devops/README.md)
+docker compose -f devops/monitor.v1.grafana/docker-compose.yml up -d
+docker compose -f devops/monitor.grafana.panel/docker-compose.yml up -d
 ```
 
 ## Testing

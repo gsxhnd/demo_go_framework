@@ -2,7 +2,7 @@
 # OpenTelemetry Collector 配置文件
 # =============================================================================
 # 用途：接收应用发送的 OTLP 数据，统一处理后转发到后端存储
-# 架构：Go App -> OTel Collector -> Prometheus/Tempo/Loki -> Grafana
+# 架构：Go App -> OTel Collector -> Prometheus/Tempo/Loki（Grafana 见 monitor.grafana.panel）
 # =============================================================================
 
 receivers:

@@ -122,7 +122,8 @@ go build -o server ./cmd/server
 docker compose -f devops/database/docker-compose.yml up -d
 
 # 启动可观测性栈（可选）
-docker compose -f devops/grafana.v1/docker-compose.yml up -d
+docker compose -f devops/monitor.v1.grafana/docker-compose.yml up -d
+docker compose -f devops/monitor.grafana.panel/docker-compose.yml up -d
 
 # 启动服务
 go run cmd/server/main.go -c config/config.local.yaml
@@ -133,8 +134,9 @@ go run cmd/server/main.go -c config/config.local.yaml
 | 目录 | 服务 | 端口 |
 |------|------|------|
 | `devops/database/` | PostgreSQL + Redis | 5432, 6379 |
-| `devops/grafana.v1/` | Grafana + Prometheus + Tempo + Loki + OTel Collector | 3000, 9090, 3100, 4317 |
-| `devops/grafana.v2/` | Grafana + ClickHouse + OTel Collector | 3000, 8123, 4317 |
+| `devops/monitor.v1.grafana/` | Prometheus + Tempo + Loki + OTel Collector | 9090, 3100, 3200, 4317 |
+| `devops/monitor.v2.clickhouse/` | ClickHouse + OTel Collector | 8123, 9000, 4317 |
+| `devops/monitor.grafana.panel/` | Grafana OSS 13（v1+v2 数据源） | 3000 |
 
 ## 测试策略
 
